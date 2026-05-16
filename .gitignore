@@ -1,0 +1,74 @@
+## Your Formatting Toolkit - .NET Gitignore
+
+# Windows / Mac / Linux rác hệ điều hành
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Các thư mục build và output của .NET
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ex]it/
+log/
+logs/
+
+# Visual Studio Cache và các file cấu hình cá nhân
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.ide/
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains Rider / Resharper
+.idea/
+*.sln.iml
+_ReSharper.*/
+*.resharper.user
+*.DotSettings.user
+
+# Công cụ kiểm tra hiệu năng (Profiling)
+*.vsp
+*.vspx
+*.sap
+*.dotTrace
+
+# File cấu hình bảo mật thông tin (QUAN TRỌNG: Không push cái này lên lộ pass/token)
+appsettings.Development.json
+appsettings.Local.json
+*.usersecrets
+.env
+.env.*
+!.env.example
+
+# Kiến trúc lưu trữ cục bộ (EF Core Migrations Idempotent hoặc Script xuất ra)
+*.sql
+*.dacpac
+
+# Thư mục chứa các gói thư viện tải về (NuGet)
+*.nuget.props
+*.nuget.targets
+packages/
+artifacts/
+
+# Điểm crash dump hệ thống
+*.stackdump
+*.dmp
