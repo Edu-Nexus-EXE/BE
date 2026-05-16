@@ -7,4 +7,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+	<ItemGroup>
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="7.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+
+		<ProjectReference Include="..\Edu-Nexus.Application\Edu-Nexus.Application.csproj" />
+		<ProjectReference Include="..\Edu-Nexus.Infrastructure\Edu-Nexus.Infrastructure.csproj" />
+	</ItemGroup>
 </Project>
