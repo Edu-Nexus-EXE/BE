@@ -1,20 +1,22 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>Edu_Nexus.APIs</RootNamespace>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Edu_Nexus.APIs</RootNamespace>
   </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="7.0.0" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
+	  <PackageReference Include="Swashbuckle.AspNetCore" Version="7.0.0" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
 
-		<ProjectReference Include="..\Edu-Nexus.Application\Edu-Nexus.Application.csproj" />
-		<ProjectReference Include="..\Edu-Nexus.Infrastructure\Edu-Nexus.Infrastructure.csproj" />
-	</ItemGroup>
+	  <ProjectReference Include="..\Edu-Nexus.Application\Edu-Nexus.Application.csproj" />
+	  <ProjectReference Include="..\Edu-Nexus.Infrastructure\Edu-Nexus.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
