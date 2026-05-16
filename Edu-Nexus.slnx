@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Edu-Nexus.APIs/Edu-Nexus.APIs.csproj" Id="95f25858-0187-4604-b7c0-f27c6eba814b" />
+  <Project Path="Edu-Nexus.Application/Edu-Nexus.Application.csproj" Id="9c332de3-62db-444e-a360-80f4f2b02503" />
+  <Project Path="Edu-Nexus.Domain/Edu-Nexus.Domain.csproj" Id="4c3b6d98-cb97-4317-9bef-1b1f68ecebe3" />
+  <Project Path="Edu-Nexus.Infrastructure/Edu-Nexus.Infrastructure.csproj" Id="b3cd193c-fe2e-43dd-82da-8109f6c5e8ad" />
+</Solution>

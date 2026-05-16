@@ -1,0 +1,95 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\FPT\\EXE\\Edu-Nexus\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B3CD193C-FE2E-43DD-82DA-8109F6C5E8AD}|Edu-Nexus.Infrastructure\\Edu-Nexus.Infrastructure.csproj|d:\\fpt\\exe\\edu-nexus\\edu-nexus.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B3CD193C-FE2E-43DD-82DA-8109F6C5E8AD}|Edu-Nexus.Infrastructure\\Edu-Nexus.Infrastructure.csproj|solutionrelative:edu-nexus.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4C3B6D98-CB97-4317-9BEF-1B1F68ECEBE3}|Edu-Nexus.Domain\\Edu-Nexus.Domain.csproj|d:\\fpt\\exe\\edu-nexus\\edu-nexus.domain\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4C3B6D98-CB97-4317-9BEF-1B1F68ECEBE3}|Edu-Nexus.Domain\\Edu-Nexus.Domain.csproj|solutionrelative:edu-nexus.domain\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9C332DE3-62DB-444E-A360-80F4F2B02503}|Edu-Nexus.Application\\Edu-Nexus.Application.csproj|d:\\fpt\\exe\\edu-nexus\\edu-nexus.application\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9C332DE3-62DB-444E-A360-80F4F2B02503}|Edu-Nexus.Application\\Edu-Nexus.Application.csproj|solutionrelative:edu-nexus.application\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "D:\\FPT\\EXE\\Edu-Nexus\\Edu-Nexus.Infrastructure\\Class1.cs",
+              "RelativeDocumentMoniker": "Edu-Nexus.Infrastructure\\Class1.cs",
+              "ToolTip": "D:\\FPT\\EXE\\Edu-Nexus\\Edu-Nexus.Infrastructure\\Class1.cs",
+              "RelativeToolTip": "Edu-Nexus.Infrastructure\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-16T06:21:48.511Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "D:\\FPT\\EXE\\Edu-Nexus\\Edu-Nexus.Domain\\Class1.cs",
+              "RelativeDocumentMoniker": "Edu-Nexus.Domain\\Class1.cs",
+              "ToolTip": "D:\\FPT\\EXE\\Edu-Nexus\\Edu-Nexus.Domain\\Class1.cs",
+              "RelativeToolTip": "Edu-Nexus.Domain\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-16T06:21:20.714Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "D:\\FPT\\EXE\\Edu-Nexus\\Edu-Nexus.Application\\Class1.cs",
+              "RelativeDocumentMoniker": "Edu-Nexus.Application\\Class1.cs",
+              "ToolTip": "D:\\FPT\\EXE\\Edu-Nexus\\Edu-Nexus.Application\\Class1.cs",
+              "RelativeToolTip": "Edu-Nexus.Application\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-16T06:20:57.209Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{56df62a4-05a3-4e5b-aa1a-99371ccfb997}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
