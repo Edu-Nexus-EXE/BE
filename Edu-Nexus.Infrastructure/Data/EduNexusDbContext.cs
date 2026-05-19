@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Edu_Nexus.Domain.Enums.Users;
