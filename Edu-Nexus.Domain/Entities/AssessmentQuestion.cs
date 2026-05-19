@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.AssessmentQuestions;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -11,13 +13,13 @@ public partial class AssessmentQuestion
 
     public short SequenceOrder { get; set; }
 
-    public short Part { get; set; }
+    public AssessmentQuestionPart Part { get; set; }
 
     public string QuestionText { get; set; } = null!;
 
     public string Options { get; set; } = null!;
 
-    public char CorrectOption { get; set; }
+    public AssessmentOption CorrectOption { get; set; }
 
     public string? RelatedSkill { get; set; }
 

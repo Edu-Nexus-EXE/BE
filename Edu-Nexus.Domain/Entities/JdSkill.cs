@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.JdSkills;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -13,7 +15,7 @@ public partial class JdSkill
 
     public string SkillNameRaw { get; set; } = null!;
 
-    public string SkillType { get; set; } = null!;
+    public SkillType SkillType { get; set; }
 
     public bool IsMandatory { get; set; }
 

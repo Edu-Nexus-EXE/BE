@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.AssessmentQuestions;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -11,7 +13,7 @@ public partial class AssessmentAnswer
 
     public Guid QuestionId { get; set; }
 
-    public char SelectedOption { get; set; }
+    public AssessmentOption SelectedOption { get; set; }
 
     public bool IsCorrect { get; set; }
 

@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.PaymentOrders;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -19,11 +21,11 @@ public partial class PaymentOrder
 
     public string Currency { get; set; } = null!;
 
-    public string PaymentProvider { get; set; } = null!;
+    public PaymentProvider PaymentProvider { get; set; }
 
     public string? ProviderOrderId { get; set; }
 
-    public string Status { get; set; } = null!;
+    public PaymentOrderStatus Status { get; set; }
 
     public DateTime? CompletedAt { get; set; }
 

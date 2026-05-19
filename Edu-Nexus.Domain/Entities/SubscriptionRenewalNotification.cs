@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.SubscriptionRenewalNotifications;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -11,7 +13,7 @@ public partial class SubscriptionRenewalNotification
 
     public Guid SubscriptionId { get; set; }
 
-    public string NotificationType { get; set; } = null!;
+    public SubscriptionRenewalNotificationType NotificationType { get; set; }
 
     public DateTime SentAt { get; set; }
 

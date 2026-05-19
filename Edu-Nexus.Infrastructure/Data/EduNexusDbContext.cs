@@ -2,6 +2,22 @@ using System;
 using System.Collections.Generic;
 using Edu_Nexus.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Edu_Nexus.Domain.Enums.Users;
+using Edu_Nexus.Domain.Enums.SubscriptionTiers;
+using Edu_Nexus.Domain.Enums.JdSubmissions;
+using Edu_Nexus.Domain.Enums.JdSkills;
+using Edu_Nexus.Domain.Enums.AssessmentPaths;
+using Edu_Nexus.Domain.Enums.AssessmentSessions;
+using Edu_Nexus.Domain.Enums.AssessmentQuestions;
+using Edu_Nexus.Domain.Enums.GapAnalyses;
+using Edu_Nexus.Domain.Enums.GapAnalysisSkills;
+using Edu_Nexus.Domain.Enums.Roadmaps;
+using Edu_Nexus.Domain.Enums.RoadmapNodes;
+using Edu_Nexus.Domain.Enums.LearningResources;
+using Edu_Nexus.Domain.Enums.UserSubscriptions;
+using Edu_Nexus.Domain.Enums.PaymentOrders;
+using Edu_Nexus.Domain.Enums.SubscriptionRenewalNotifications;
+using Edu_Nexus.Domain.Enums.RagDocuments;
 
 namespace Edu_Nexus.Infrastructure.Data;
 
@@ -177,7 +193,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.QuestionId).HasColumnName("question_id");
             entity.Property(e => e.SelectedOption)
                 .HasMaxLength(1)
-                .HasColumnName("selected_option");
+                .HasColumnName("selected_option")
+                .HasConversion(
+                    v => v.ToString(),
+                    v => (AssessmentOption)Enum.Parse(typeof(AssessmentOption), v));
             entity.Property(e => e.SessionId).HasColumnName("session_id");
 
             entity.HasOne(d => d.Question).WithMany(p => p.AssessmentAnswers)
@@ -208,7 +227,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.JdId).HasColumnName("jd_id");
             entity.Property(e => e.PathType)
                 .HasMaxLength(20)
-                .HasColumnName("path_type");
+                .HasColumnName("path_type")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (PathType)Enum.Parse(typeof(PathType), v, true));
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.Jd).WithOne(p => p.AssessmentPath)
@@ -233,12 +255,19 @@ public partial class EduNexusDbContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.CorrectOption)
                 .HasMaxLength(1)
-                .HasColumnName("correct_option");
+                .HasColumnName("correct_option")
+                .HasConversion(
+                    v => v.ToString(),
+                    v => (AssessmentOption)Enum.Parse(typeof(AssessmentOption), v));
             entity.Property(e => e.Explanation).HasColumnName("explanation");
             entity.Property(e => e.Options)
                 .HasColumnType("jsonb")
                 .HasColumnName("options");
-            entity.Property(e => e.Part).HasColumnName("part");
+            entity.Property(e => e.Part)
+                .HasColumnName("part")
+                .HasConversion(
+                    v => (short)v,
+                    v => (AssessmentQuestionPart)v);
             entity.Property(e => e.QuestionText).HasColumnName("question_text");
             entity.Property(e => e.RelatedSkill)
                 .HasMaxLength(150)
@@ -290,7 +319,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'in_progress'::character varying")
-                .HasColumnName("status");
+                .HasColumnName("status")
+                .HasConversion(
+                    v => v == AssessmentSessionStatus.InProgress ? "in_progress" : v == AssessmentSessionStatus.Submitted ? "submitted" : "expired",
+                    v => v == "in_progress" ? AssessmentSessionStatus.InProgress : v == "submitted" ? AssessmentSessionStatus.Submitted : AssessmentSessionStatus.Expired);
             entity.Property(e => e.SubmittedAt).HasColumnName("submitted_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
@@ -386,7 +418,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.ParseStatus)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'pending'::character varying")
-                .HasColumnName("parse_status");
+                .HasColumnName("parse_status")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (ParseStatus)Enum.Parse(typeof(ParseStatus), v, true));
             entity.Property(e => e.ParsedAt).HasColumnName("parsed_at");
             entity.Property(e => e.ParsedSkills)
                 .HasColumnType("jsonb")
@@ -428,7 +463,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.Error).HasColumnName("error");
             entity.Property(e => e.InputSource)
                 .HasMaxLength(20)
-                .HasColumnName("input_source");
+                .HasColumnName("input_source")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (GapAnalysisInputSource)Enum.Parse(typeof(GapAnalysisInputSource), v, true));
             entity.Property(e => e.IsLatest)
                 .HasDefaultValue(true)
                 .HasColumnName("is_latest");
@@ -436,7 +474,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'pending'::character varying")
-                .HasColumnName("status");
+                .HasColumnName("status")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (GapAnalysisStatus)Enum.Parse(typeof(GapAnalysisStatus), v, true));
             entity.Property(e => e.Summary)
                 .HasColumnType("jsonb")
                 .HasColumnName("summary");
@@ -471,11 +512,17 @@ public partial class EduNexusDbContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.CurrentLevel)
                 .HasMaxLength(20)
-                .HasColumnName("current_level");
+                .HasColumnName("current_level")
+                .HasConversion(
+                    v => v.HasValue ? v.Value.ToString().ToLower() : null,
+                    v => !string.IsNullOrEmpty(v) ? (SkillLevel)Enum.Parse(typeof(SkillLevel), v, true) : null);
             entity.Property(e => e.GapAnalysisId).HasColumnName("gap_analysis_id");
             entity.Property(e => e.GapStatus)
                 .HasMaxLength(20)
-                .HasColumnName("gap_status");
+                .HasColumnName("gap_status")
+                .HasConversion(
+                    v => v == GapStatus.Missing ? "missing" : v == GapStatus.Have ? "have" : "needs_upgrade",
+                    v => v == "missing" ? GapStatus.Missing : v == "have" ? GapStatus.Have : GapStatus.NeedsUpgrade);
             entity.Property(e => e.IsMandatoryInJd)
                 .HasDefaultValue(true)
                 .HasColumnName("is_mandatory_in_jd");
@@ -486,7 +533,10 @@ public partial class EduNexusDbContext : DbContext
                 .HasColumnName("skill_name");
             entity.Property(e => e.TargetLevel)
                 .HasMaxLength(20)
-                .HasColumnName("target_level");
+                .HasColumnName("target_level")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (SkillLevel)Enum.Parse(typeof(SkillLevel), v, true));
             entity.Property(e => e.UrgencyScore).HasColumnName("urgency_score");
 
             entity.HasOne(d => d.GapAnalysis).WithMany(p => p.GapAnalysisSkills)
@@ -525,7 +575,10 @@ public partial class EduNexusDbContext : DbContext
                 .HasColumnName("skill_name_raw");
             entity.Property(e => e.SkillType)
                 .HasMaxLength(20)
-                .HasColumnName("skill_type");
+                .HasColumnName("skill_type")
+                .HasConversion(
+                    v => v == SkillType.HardSkill ? "hard_skill" : "soft_skill",
+                    v => v == "hard_skill" ? SkillType.HardSkill : SkillType.SoftSkill);
 
             entity.HasOne(d => d.Jd).WithMany(p => p.JdSkills)
                 .HasForeignKey(d => d.JdId)
@@ -570,7 +623,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.ParseStatus)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'pending'::character varying")
-                .HasColumnName("parse_status");
+                .HasColumnName("parse_status")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (ParseStatus)Enum.Parse(typeof(ParseStatus), v, true));
             entity.Property(e => e.ParsedAt).HasColumnName("parsed_at");
             entity.Property(e => e.RawContent).HasColumnName("raw_content");
             entity.Property(e => e.SalaryMax).HasColumnName("salary_max");
@@ -580,7 +636,10 @@ public partial class EduNexusDbContext : DbContext
                 .HasColumnName("seniority_level");
             entity.Property(e => e.SourceType)
                 .HasMaxLength(20)
-                .HasColumnName("source_type");
+                .HasColumnName("source_type")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (JdSourceType)Enum.Parse(typeof(JdSourceType), v, true));
             entity.Property(e => e.SourceUrl).HasColumnName("source_url");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
@@ -602,7 +661,16 @@ public partial class EduNexusDbContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.AccessType)
                 .HasMaxLength(30)
-                .HasColumnName("access_type");
+                .HasColumnName("access_type")
+                .HasConversion(
+                    v => v == LearningResourceAccessType.FptuInternal ? "fptu_internal" :
+                         v == LearningResourceAccessType.PartnershipPremium ? "partnership_premium" :
+                         v == LearningResourceAccessType.PartnershipSubscription ? "partnership_subscription" :
+                         v.ToString().ToLower(),
+                    v => v == "fptu_internal" ? LearningResourceAccessType.FptuInternal :
+                         v == "partnership_premium" ? LearningResourceAccessType.PartnershipPremium :
+                         v == "partnership_subscription" ? LearningResourceAccessType.PartnershipSubscription :
+                         (LearningResourceAccessType)Enum.Parse(typeof(LearningResourceAccessType), v, true));
             entity.Property(e => e.AffiliateCommissionRate)
                 .HasPrecision(5, 2)
                 .HasColumnName("affiliate_commission_rate");
@@ -636,7 +704,10 @@ public partial class EduNexusDbContext : DbContext
                 .HasColumnName("title");
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
-                .HasColumnName("type");
+                .HasColumnName("type")
+                .HasConversion(
+                    v => v == LearningResourceType.FptuInternal ? "fptu_internal" : v.ToString().ToLower(),
+                    v => v == "fptu_internal" ? LearningResourceType.FptuInternal : (LearningResourceType)Enum.Parse(typeof(LearningResourceType), v, true));
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
@@ -723,14 +794,20 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.DurationMonths).HasColumnName("duration_months");
             entity.Property(e => e.PaymentProvider)
                 .HasMaxLength(20)
-                .HasColumnName("payment_provider");
+                .HasColumnName("payment_provider")
+                .HasConversion(
+                    v => v == PaymentProvider.ManualTransfer ? "manual_transfer" : v.ToString().ToLower(),
+                    v => v == "manual_transfer" ? PaymentProvider.ManualTransfer : (PaymentProvider)Enum.Parse(typeof(PaymentProvider), v, true));
             entity.Property(e => e.ProviderOrderId)
                 .HasMaxLength(255)
                 .HasColumnName("provider_order_id");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'pending'::character varying")
-                .HasColumnName("status");
+                .HasColumnName("status")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (PaymentOrderStatus)Enum.Parse(typeof(PaymentOrderStatus), v, true));
             entity.Property(e => e.SubscriptionId).HasColumnName("subscription_id");
             entity.Property(e => e.TierId).HasColumnName("tier_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
@@ -911,7 +988,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.EmbeddingStatus)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'pending'::character varying")
-                .HasColumnName("embedding_status");
+                .HasColumnName("embedding_status")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (EmbeddingStatus)Enum.Parse(typeof(EmbeddingStatus), v, true));
             entity.Property(e => e.FileUrl).HasColumnName("file_url");
             entity.Property(e => e.Metadata)
                 .HasColumnType("jsonb")
@@ -921,7 +1001,12 @@ public partial class EduNexusDbContext : DbContext
                 .HasColumnName("related_skill_ids");
             entity.Property(e => e.SourceType)
                 .HasMaxLength(50)
-                .HasColumnName("source_type");
+                .HasColumnName("source_type")
+                .HasConversion(
+                    v => v == RagDocumentSourceType.FptuCurriculum ? "fptu_curriculum" :
+                         v == RagDocumentSourceType.FptuSyllabus ? "fptu_syllabus" : "external_doc",
+                    v => v == "fptu_curriculum" ? RagDocumentSourceType.FptuCurriculum :
+                         v == "fptu_syllabus" ? RagDocumentSourceType.FptuSyllabus : RagDocumentSourceType.ExternalDoc);
             entity.Property(e => e.Title)
                 .HasMaxLength(255)
                 .HasColumnName("title");
@@ -1029,7 +1114,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'generating'::character varying")
-                .HasColumnName("status");
+                .HasColumnName("status")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (RoadmapStatus)Enum.Parse(typeof(RoadmapStatus), v, true));
             entity.Property(e => e.Title)
                 .HasMaxLength(255)
                 .HasColumnName("title");
@@ -1083,7 +1171,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'not_started'::character varying")
-                .HasColumnName("status");
+                .HasColumnName("status")
+                .HasConversion(
+                    v => v == RoadmapNodeStatus.NotStarted ? "not_started" : v == RoadmapNodeStatus.InProgress ? "in_progress" : "completed",
+                    v => v == "not_started" ? RoadmapNodeStatus.NotStarted : v == "in_progress" ? RoadmapNodeStatus.InProgress : RoadmapNodeStatus.Completed);
 
             entity.HasOne(d => d.Roadmap).WithMany(p => p.RoadmapNodes)
                 .HasForeignKey(d => d.RoadmapId)
@@ -1242,7 +1333,12 @@ public partial class EduNexusDbContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.NotificationType)
                 .HasMaxLength(20)
-                .HasColumnName("notification_type");
+                .HasColumnName("notification_type")
+                .HasConversion(
+                    v => v == SubscriptionRenewalNotificationType.Renewal7d ? "renewal_7d" :
+                         v == SubscriptionRenewalNotificationType.Renewal3d ? "renewal_3d" : "renewal_0d",
+                    v => v == "renewal_7d" ? SubscriptionRenewalNotificationType.Renewal7d :
+                         v == "renewal_3d" ? SubscriptionRenewalNotificationType.Renewal3d : SubscriptionRenewalNotificationType.Renewal0d);
             entity.Property(e => e.SentAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("sent_at");
@@ -1298,7 +1394,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.RoadmapActiveQuota).HasColumnName("roadmap_active_quota");
             entity.Property(e => e.TierCode)
                 .HasMaxLength(20)
-                .HasColumnName("tier_code");
+                .HasColumnName("tier_code")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (SubscriptionTierCode)Enum.Parse(typeof(SubscriptionTierCode), v, true));
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -1321,7 +1420,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.AuthProvider)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'email'::character varying")
-                .HasColumnName("auth_provider");
+                .HasColumnName("auth_provider")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (AuthProvider)Enum.Parse(typeof(AuthProvider), v, true));
             entity.Property(e => e.AvatarUrl).HasColumnName("avatar_url");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
@@ -1352,7 +1454,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.Role)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'user'::character varying")
-                .HasColumnName("role");
+                .HasColumnName("role")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (UserRole)Enum.Parse(typeof(UserRole), v, true));
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
@@ -1385,7 +1490,10 @@ public partial class EduNexusDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'active'::character varying")
-                .HasColumnName("status");
+                .HasColumnName("status")
+                .HasConversion(
+                    v => v.ToString().ToLower(),
+                    v => (UserSubscriptionStatus)Enum.Parse(typeof(UserSubscriptionStatus), v, true));
             entity.Property(e => e.TierId).HasColumnName("tier_id");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")

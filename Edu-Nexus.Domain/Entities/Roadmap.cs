@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.Roadmaps;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -17,7 +19,7 @@ public partial class Roadmap
 
     public int? EstimatedTotalHours { get; set; }
 
-    public string Status { get; set; } = null!;
+    public RoadmapStatus Status { get; set; }
 
     public bool IsOutdated { get; set; }
 

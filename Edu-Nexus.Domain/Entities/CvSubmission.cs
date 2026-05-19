@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.JdSubmissions;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -23,7 +25,7 @@ public partial class CvSubmission
 
     public string? ParsedSkills { get; set; }
 
-    public string ParseStatus { get; set; } = null!;
+    public ParseStatus ParseStatus { get; set; }
 
     public string? ParseError { get; set; }
 

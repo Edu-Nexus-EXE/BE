@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.AssessmentSessions;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -19,7 +21,7 @@ public partial class AssessmentSession
 
     public string? SkillScores { get; set; }
 
-    public string Status { get; set; } = null!;
+    public AssessmentSessionStatus Status { get; set; }
 
     public bool IsCurrent { get; set; }
 

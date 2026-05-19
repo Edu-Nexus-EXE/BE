@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.GapAnalysisSkills;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -13,11 +15,11 @@ public partial class GapAnalysisSkill
 
     public string SkillName { get; set; } = null!;
 
-    public string GapStatus { get; set; } = null!;
+    public GapStatus GapStatus { get; set; }
 
-    public string? CurrentLevel { get; set; }
+    public SkillLevel? CurrentLevel { get; set; }
 
-    public string TargetLevel { get; set; } = null!;
+    public SkillLevel TargetLevel { get; set; }
 
     public short? UrgencyScore { get; set; }
 

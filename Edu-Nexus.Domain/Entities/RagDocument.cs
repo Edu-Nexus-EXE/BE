@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.RagDocuments;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -11,7 +13,7 @@ public partial class RagDocument
 
     public string Title { get; set; } = null!;
 
-    public string SourceType { get; set; } = null!;
+    public RagDocumentSourceType SourceType { get; set; }
 
     public string? FileUrl { get; set; }
 
@@ -21,7 +23,7 @@ public partial class RagDocument
 
     public int ChunksCount { get; set; }
 
-    public string EmbeddingStatus { get; set; } = null!;
+    public EmbeddingStatus EmbeddingStatus { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

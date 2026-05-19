@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.Users;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -11,7 +13,7 @@ public partial class User
 
     public string? PasswordHash { get; set; }
 
-    public string AuthProvider { get; set; } = null!;
+    public AuthProvider AuthProvider { get; set; }
 
     public string? GoogleSub { get; set; }
 
@@ -19,7 +21,7 @@ public partial class User
 
     public string? AvatarUrl { get; set; }
 
-    public string Role { get; set; } = null!;
+    public UserRole Role { get; set; }
 
     public bool IsBanned { get; set; }
 

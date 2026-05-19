@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.AssessmentPaths;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -11,7 +13,7 @@ public partial class AssessmentPath
 
     public Guid UserId { get; set; }
 
-    public string PathType { get; set; } = null!;
+    public PathType PathType { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

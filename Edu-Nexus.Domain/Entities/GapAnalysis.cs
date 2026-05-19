@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.GapAnalyses;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -13,7 +15,7 @@ public partial class GapAnalysis
 
     public Guid AssessmentPathId { get; set; }
 
-    public string InputSource { get; set; } = null!;
+    public GapAnalysisInputSource InputSource { get; set; }
 
     public short Version { get; set; }
 
@@ -21,7 +23,7 @@ public partial class GapAnalysis
 
     public string? Summary { get; set; }
 
-    public string Status { get; set; } = null!;
+    public GapAnalysisStatus Status { get; set; }
 
     public string? Error { get; set; }
 

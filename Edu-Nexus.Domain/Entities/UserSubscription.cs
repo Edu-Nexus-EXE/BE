@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.UserSubscriptions;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -11,7 +13,7 @@ public partial class UserSubscription
 
     public Guid TierId { get; set; }
 
-    public string Status { get; set; } = null!;
+    public UserSubscriptionStatus Status { get; set; }
 
     public DateTime StartedAt { get; set; }
 

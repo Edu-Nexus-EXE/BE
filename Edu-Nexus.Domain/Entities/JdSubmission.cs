@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.JdSubmissions;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -9,7 +11,7 @@ public partial class JdSubmission
 
     public Guid UserId { get; set; }
 
-    public string SourceType { get; set; } = null!;
+    public JdSourceType SourceType { get; set; }
 
     public string? SourceUrl { get; set; }
 
@@ -27,7 +29,7 @@ public partial class JdSubmission
 
     public string? Currency { get; set; }
 
-    public string ParseStatus { get; set; } = null!;
+    public ParseStatus ParseStatus { get; set; }
 
     public string? ParseError { get; set; }
 

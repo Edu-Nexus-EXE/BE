@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.LearningResources;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -9,7 +11,7 @@ public partial class LearningResource
 
     public string Title { get; set; } = null!;
 
-    public string Type { get; set; } = null!;
+    public LearningResourceType Type { get; set; }
 
     public string? Provider { get; set; }
 
@@ -19,7 +21,7 @@ public partial class LearningResource
 
     public bool IsFree { get; set; }
 
-    public string AccessType { get; set; } = null!;
+    public LearningResourceAccessType AccessType { get; set; }
 
     public string? AffiliateLabel { get; set; }
 

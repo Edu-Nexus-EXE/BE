@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.RoadmapNodes;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -21,7 +23,7 @@ public partial class RoadmapNode
 
     public bool IsPrerequisite { get; set; }
 
-    public string Status { get; set; } = null!;
+    public RoadmapNodeStatus Status { get; set; }
 
     public DateTime? CompletedAt { get; set; }
 

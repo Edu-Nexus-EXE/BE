@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
+using Edu_Nexus.Domain.Enums.SubscriptionTiers;
 
 namespace Edu_Nexus.Domain.Entities;
 
@@ -7,7 +9,7 @@ public partial class SubscriptionTier
 {
     public Guid Id { get; set; }
 
-    public string TierCode { get; set; } = null!;
+    public SubscriptionTierCode TierCode { get; set; }
 
     public string DisplayName { get; set; } = null!;
 
