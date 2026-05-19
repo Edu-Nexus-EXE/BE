@@ -52,8 +52,11 @@ _ReSharper.*/
 *.dotTrace
 
 # File cấu hình bảo mật thông tin (QUAN TRỌNG: Không push cái này lên lộ pass/token)
+appsettings.json
 appsettings.Development.json
 appsettings.Local.json
+Edu-Nexus.APIs/appsettings.json
+Edu-Nexus.APIs/appsettings.*.json
 *.usersecrets
 .env
 .env.*
