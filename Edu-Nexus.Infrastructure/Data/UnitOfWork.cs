@@ -14,12 +14,14 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         RefreshTokens = new Repository<RefreshToken>(_context);
         SubscriptionTiers = new Repository<SubscriptionTier>(_context);
         UserSubscriptions = new Repository<UserSubscription>(_context);
+        OnboardingResponses = new Repository<OnboardingResponse>(_context);
     }
 
     public IRepository<User> Users { get; private set; }
     public IRepository<RefreshToken> RefreshTokens { get; private set; }
     public IRepository<SubscriptionTier> SubscriptionTiers { get; private set; }
     public IRepository<UserSubscription> UserSubscriptions { get; private set; }
+    public IRepository<OnboardingResponse> OnboardingResponses { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

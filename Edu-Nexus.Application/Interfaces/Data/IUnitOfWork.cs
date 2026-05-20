@@ -8,6 +8,7 @@ public interface IUnitOfWork
     IRepository<RefreshToken> RefreshTokens { get; }
     IRepository<SubscriptionTier> SubscriptionTiers { get; }
     IRepository<UserSubscription> UserSubscriptions { get; }
+    IRepository<OnboardingResponse> OnboardingResponses { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
