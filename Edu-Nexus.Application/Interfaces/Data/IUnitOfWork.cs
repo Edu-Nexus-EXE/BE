@@ -11,6 +11,8 @@ public interface IUnitOfWork
     IRepository<OnboardingResponse> OnboardingResponses { get; }
     IRepository<JdSubmission> JdSubmissions { get; }
     IRepository<JdSkill> JdSkills { get; }
+    IRepository<AssessmentPath> AssessmentPaths { get; }
+    IRepository<GapAnalysis> GapAnalyses { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

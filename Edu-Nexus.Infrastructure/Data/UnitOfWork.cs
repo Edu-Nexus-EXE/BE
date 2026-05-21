@@ -17,6 +17,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         OnboardingResponses = new Repository<OnboardingResponse>(_context);
         JdSubmissions = new Repository<JdSubmission>(_context);
         JdSkills = new Repository<JdSkill>(_context);
+        AssessmentPaths = new Repository<AssessmentPath>(_context);
+        GapAnalyses = new Repository<GapAnalysis>(_context);
     }
 
     public IRepository<User> Users { get; private set; }
@@ -26,6 +28,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IRepository<OnboardingResponse> OnboardingResponses { get; private set; }
     public IRepository<JdSubmission> JdSubmissions { get; private set; }
     public IRepository<JdSkill> JdSkills { get; private set; }
+    public IRepository<AssessmentPath> AssessmentPaths { get; private set; }
+    public IRepository<GapAnalysis> GapAnalyses { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
