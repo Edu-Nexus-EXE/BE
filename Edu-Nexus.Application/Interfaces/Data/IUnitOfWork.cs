@@ -9,6 +9,8 @@ public interface IUnitOfWork
     IRepository<SubscriptionTier> SubscriptionTiers { get; }
     IRepository<UserSubscription> UserSubscriptions { get; }
     IRepository<OnboardingResponse> OnboardingResponses { get; }
+    IRepository<JdSubmission> JdSubmissions { get; }
+    IRepository<JdSkill> JdSkills { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -1,7 +1,14 @@
+using Edu_Nexus.Application.Interfaces.BackgroundJobs;
 using Edu_Nexus.Application.Interfaces.Data;
+using Edu_Nexus.Application.Interfaces.Parsing;
 using Edu_Nexus.Application.Interfaces.Security;
+using Edu_Nexus.Infrastructure.BackgroundJobs;
 using Edu_Nexus.Infrastructure.Data;
+using Edu_Nexus.Infrastructure.Jobs;
+using Edu_Nexus.Infrastructure.Parsing;
 using Edu_Nexus.Infrastructure.Security;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +21,8 @@ public static class DependencyInjection
     {
         services.AddPersistence(configuration);
         services.AddSecurity();
+        services.AddBackgroundJobs(configuration);
+        services.AddParsing();
         return services;
     }
 
@@ -37,6 +46,30 @@ public static class DependencyInjection
         services.AddSingleton<IGoogleAuthService, GoogleAuthService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        return services;
+    }
+
+    private static IServiceCollection AddBackgroundJobs(this IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Missing ConnectionStrings:DefaultConnection for Hangfire.");
+
+        services.AddHangfire(cfg => cfg
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UsePostgreSqlStorage(opt => opt.UseNpgsqlConnection(connectionString)));
+
+        services.AddHangfireServer();
+
+        services.AddScoped<IJdParseQueue, HangfireJdParseQueue>();
+        services.AddScoped<JdParseJob>();
+        return services;
+    }
+
+    private static IServiceCollection AddParsing(this IServiceCollection services)
+    {
+        services.AddScoped<IJdParser, FakeJdParser>();
         return services;
     }
 }

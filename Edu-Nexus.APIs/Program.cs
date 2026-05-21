@@ -1,6 +1,7 @@
 using Edu_Nexus.APIs.Extensions;
 using Edu_Nexus.Application;
 using Edu_Nexus.Infrastructure;
+using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,11 @@ app.UseStaticFiles();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire");
+}
 
 app.MapControllers();
 

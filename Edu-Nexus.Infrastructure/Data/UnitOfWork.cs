@@ -15,6 +15,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         SubscriptionTiers = new Repository<SubscriptionTier>(_context);
         UserSubscriptions = new Repository<UserSubscription>(_context);
         OnboardingResponses = new Repository<OnboardingResponse>(_context);
+        JdSubmissions = new Repository<JdSubmission>(_context);
+        JdSkills = new Repository<JdSkill>(_context);
     }
 
     public IRepository<User> Users { get; private set; }
@@ -22,6 +24,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IRepository<SubscriptionTier> SubscriptionTiers { get; private set; }
     public IRepository<UserSubscription> UserSubscriptions { get; private set; }
     public IRepository<OnboardingResponse> OnboardingResponses { get; private set; }
+    public IRepository<JdSubmission> JdSubmissions { get; private set; }
+    public IRepository<JdSkill> JdSkills { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
