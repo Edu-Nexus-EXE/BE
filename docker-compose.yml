@@ -1,4 +1,22 @@
 services:
+  edu-nexus-db:
+    image: pgvector/pgvector:pg16
+    container_name: edu-nexus-db
+    environment:
+      POSTGRES_DB: edu_nexus
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: edunexus123
+    ports:
+      - "5434:5432"
+    volumes:
+      - edu-nexus-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d edu_nexus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   edu-nexus-redis:
     image: redis:7-alpine
     container_name: edu-nexus-redis
@@ -15,4 +33,7 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
 
 volumes:
+  edu-nexus-db-data:
+    external: true
+    name: 2a981b6af481ec968c5367b16d55a7d93966444287f7aef49ba54a1fac72847e
   edu-nexus-redis-data:
