@@ -1,28 +1,49 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>Edu_Nexus.Infrastructure</RootNamespace>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
-
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<RootNamespace>Edu_Nexus.Infrastructure</RootNamespace>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
 	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+
 		<PackageReference Include="BCrypt.Net-Next" Version="4.2.1" />
+
 		<PackageReference Include="Google.Apis.Auth" Version="1.74.0" />
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
+
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.2">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.54.0" />
+
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+
+		<PackageReference Include="Pgvector" Version="0.3.2" />
 		<PackageReference Include="Pgvector.EntityFrameworkCore" Version="0.3.0" />
+
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
 
+		<PackageReference Include="PdfPig" Version="0.1.11" />
+		
+		<PackageReference Include="Hangfire.Core" Version="1.8.17" />
+		<PackageReference Include="Hangfire.PostgreSql" Version="1.20.10" />
+
+		<PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.0" />
+
+		<PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
+
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\Edu-Nexus.Application\Edu-Nexus.Application.csproj" />
 	</ItemGroup>
+
 </Project>

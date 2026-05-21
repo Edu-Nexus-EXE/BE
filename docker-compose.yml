@@ -1,0 +1,18 @@
+services:
+  edu-nexus-redis:
+    image: redis:7-alpine
+    container_name: edu-nexus-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - edu-nexus-redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    command: ["redis-server", "--appendonly", "yes"]
+
+volumes:
+  edu-nexus-redis-data:
