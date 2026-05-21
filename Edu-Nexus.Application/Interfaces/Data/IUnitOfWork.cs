@@ -13,6 +13,8 @@ public interface IUnitOfWork
     IRepository<JdSkill> JdSkills { get; }
     IRepository<AssessmentPath> AssessmentPaths { get; }
     IRepository<GapAnalysis> GapAnalyses { get; }
+    IRepository<CvSubmission> CvSubmissions { get; }
+    IRepository<Roadmap> Roadmaps { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

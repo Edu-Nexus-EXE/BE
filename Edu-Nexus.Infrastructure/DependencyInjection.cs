@@ -2,11 +2,13 @@ using Edu_Nexus.Application.Interfaces.BackgroundJobs;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Parsing;
 using Edu_Nexus.Application.Interfaces.Security;
+using Edu_Nexus.Application.Interfaces.Storage;
 using Edu_Nexus.Infrastructure.BackgroundJobs;
 using Edu_Nexus.Infrastructure.Data;
 using Edu_Nexus.Infrastructure.Jobs;
 using Edu_Nexus.Infrastructure.Parsing;
 using Edu_Nexus.Infrastructure.Security;
+using Edu_Nexus.Infrastructure.Storage;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
@@ -64,12 +66,19 @@ public static class DependencyInjection
 
         services.AddScoped<IJdParseQueue, HangfireJdParseQueue>();
         services.AddScoped<JdParseJob>();
+
+        services.AddScoped<ICvParseQueue, HangfireCvParseQueue>();
+        services.AddScoped<CvParseJob>();
         return services;
     }
 
     private static IServiceCollection AddParsing(this IServiceCollection services)
     {
         services.AddScoped<IJdParser, FakeJdParser>();
+        services.AddScoped<ICvParser, FakeCvParser>();
+        services.AddSingleton<IPdfTextExtractor, PdfPigTextExtractor>();
+        services.AddSingleton<IAnonymizer, RegexAnonymizer>();
+        services.AddSingleton<IFileStorage, LocalFileStorage>();
         return services;
     }
 }
