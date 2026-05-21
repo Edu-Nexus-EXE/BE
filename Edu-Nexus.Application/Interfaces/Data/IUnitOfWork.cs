@@ -15,6 +15,9 @@ public interface IUnitOfWork
     IRepository<GapAnalysis> GapAnalyses { get; }
     IRepository<CvSubmission> CvSubmissions { get; }
     IRepository<Roadmap> Roadmaps { get; }
+    IRepository<AssessmentSession> AssessmentSessions { get; }
+    IRepository<AssessmentQuestion> AssessmentQuestions { get; }
+    IRepository<AssessmentAnswer> AssessmentAnswers { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

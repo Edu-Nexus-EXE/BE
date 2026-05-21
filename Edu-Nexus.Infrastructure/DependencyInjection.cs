@@ -69,6 +69,9 @@ public static class DependencyInjection
 
         services.AddScoped<ICvParseQueue, HangfireCvParseQueue>();
         services.AddScoped<CvParseJob>();
+
+        services.AddScoped<IAssessmentGenerateQueue, HangfireAssessmentGenerateQueue>();
+        services.AddScoped<AssessmentGenerateJob>();
         return services;
     }
 
@@ -76,6 +79,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IJdParser, FakeJdParser>();
         services.AddScoped<ICvParser, FakeCvParser>();
+        services.AddScoped<IAssessmentQuestionGenerator, FakeAssessmentQuestionGenerator>();
         services.AddSingleton<IPdfTextExtractor, PdfPigTextExtractor>();
         services.AddSingleton<IAnonymizer, RegexAnonymizer>();
         services.AddSingleton<IFileStorage, LocalFileStorage>();
