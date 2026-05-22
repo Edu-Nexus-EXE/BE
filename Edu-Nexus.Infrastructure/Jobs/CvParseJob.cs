@@ -1,10 +1,13 @@
 using System.Text.Json;
+using Edu_Nexus.Application.Interfaces.BackgroundJobs;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Parsing;
 using Edu_Nexus.Application.Interfaces.Storage;
 using Edu_Nexus.Domain.Entities;
+using Edu_Nexus.Domain.Enums.GapAnalyses;
 using Edu_Nexus.Domain.Enums.JdSubmissions;
 using Edu_Nexus.Domain.Enums.Roadmaps;
+using Edu_Nexus.Domain.Enums.UserSubscriptions;
 using Microsoft.Extensions.Logging;
 
 namespace Edu_Nexus.Infrastructure.Jobs;
@@ -16,6 +19,7 @@ public class CvParseJob
     private readonly IPdfTextExtractor _pdfExtractor;
     private readonly IAnonymizer _anonymizer;
     private readonly ICvParser _cvParser;
+    private readonly IGapAnalysisQueue _gapAnalysisQueue;
     private readonly ILogger<CvParseJob> _logger;
 
     public CvParseJob(
@@ -24,6 +28,7 @@ public class CvParseJob
         IPdfTextExtractor pdfExtractor,
         IAnonymizer anonymizer,
         ICvParser cvParser,
+        IGapAnalysisQueue gapAnalysisQueue,
         ILogger<CvParseJob> logger)
     {
         _unitOfWork = unitOfWork;
@@ -31,6 +36,7 @@ public class CvParseJob
         _pdfExtractor = pdfExtractor;
         _anonymizer = anonymizer;
         _cvParser = cvParser;
+        _gapAnalysisQueue = gapAnalysisQueue;
         _logger = logger;
     }
 
@@ -116,5 +122,42 @@ public class CvParseJob
         {
             await _unitOfWork.SaveChangesAsync(ct);
         }
+
+        await EnqueueGapRerunAsync(path, ct);
+    }
+
+    private async Task EnqueueGapRerunAsync(AssessmentPath path, CancellationToken ct)
+    {
+        var priorCompleted = (await _unitOfWork.GapAnalyses.FindAsync(
+            g => g.JdId == path.JdId && g.UserId == path.UserId && g.Status == GapAnalysisStatus.Completed,
+            "", ct))
+            .OrderByDescending(g => g.Version)
+            .FirstOrDefault();
+
+        if (priorCompleted == null) return;
+
+        foreach (var existing in await _unitOfWork.GapAnalyses.FindAsync(
+            g => g.JdId == path.JdId && g.UserId == path.UserId && g.IsLatest, "", ct))
+        {
+            existing.IsLatest = false;
+            _unitOfWork.GapAnalyses.Update(existing);
+        }
+
+        var nextVersion = (short)(priorCompleted.Version + 1);
+        var gap = new GapAnalysis
+        {
+            UserId = path.UserId,
+            JdId = path.JdId,
+            AssessmentPathId = path.Id,
+            InputSource = priorCompleted.InputSource,
+            Version = nextVersion,
+            IsLatest = true,
+            Status = GapAnalysisStatus.Pending,
+        };
+        _unitOfWork.GapAnalyses.Add(gap);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        _gapAnalysisQueue.Enqueue(gap.Id);
+        _logger.LogInformation("FR3.5 auto-trigger: enqueued GapAnalysis {Id} v{Version} after CV re-upload", gap.Id, nextVersion);
     }
 }

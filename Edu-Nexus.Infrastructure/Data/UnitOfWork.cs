@@ -24,6 +24,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         AssessmentSessions = new Repository<AssessmentSession>(_context);
         AssessmentQuestions = new Repository<AssessmentQuestion>(_context);
         AssessmentAnswers = new Repository<AssessmentAnswer>(_context);
+        GapAnalysisSkills = new Repository<GapAnalysisSkill>(_context);
+        Skills = new Repository<Skill>(_context);
     }
 
     public IRepository<User> Users { get; private set; }
@@ -40,6 +42,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IRepository<AssessmentSession> AssessmentSessions { get; private set; }
     public IRepository<AssessmentQuestion> AssessmentQuestions { get; private set; }
     public IRepository<AssessmentAnswer> AssessmentAnswers { get; private set; }
+    public IRepository<GapAnalysisSkill> GapAnalysisSkills { get; private set; }
+    public IRepository<Skill> Skills { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

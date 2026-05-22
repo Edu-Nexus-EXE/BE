@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Edu_Nexus.Application.DTOs;
+using Edu_Nexus.Application.Interfaces.BackgroundJobs;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Security;
 using Edu_Nexus.Domain.Entities;
@@ -16,11 +17,16 @@ public class SubmitAssessmentSessionCommandHandler : IRequestHandler<SubmitAsses
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IGapAnalysisQueue _gapAnalysisQueue;
 
-    public SubmitAssessmentSessionCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public SubmitAssessmentSessionCommandHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        IGapAnalysisQueue gapAnalysisQueue)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _gapAnalysisQueue = gapAnalysisQueue;
     }
 
     public async Task<AssessmentSessionResultDto> Handle(SubmitAssessmentSessionCommand request, CancellationToken cancellationToken)
@@ -136,15 +142,39 @@ public class SubmitAssessmentSessionCommandHandler : IRequestHandler<SubmitAsses
         if (session.AssessmentPath == null) return null;
 
         var jdId = session.AssessmentPath.JdId;
-        var priorCompletedGap = await _unitOfWork.GapAnalyses.FirstOrDefaultAsync(
-            g => g.JdId == jdId && g.Status == GapAnalysisStatus.Completed,
-            "", ct);
+        var userId = session.UserId;
+
+        var priorCompletedGap = (await _unitOfWork.GapAnalyses.FindAsync(
+            g => g.JdId == jdId && g.UserId == userId && g.Status == GapAnalysisStatus.Completed,
+            "", ct))
+            .OrderByDescending(g => g.Version)
+            .FirstOrDefault();
 
         if (priorCompletedGap == null) return null;
 
-        // TODO (S2.1): enqueue GapAnalysisService for jdId, then return the new pending gap id.
-        // For now we report the prior gap as the source so FE can show a "đang cập nhật" hint.
-        return new AutoTriggeredDto(priorCompletedGap.Id, "pending");
+        foreach (var latest in await _unitOfWork.GapAnalyses.FindAsync(
+            g => g.JdId == jdId && g.UserId == userId && g.IsLatest, "", ct))
+        {
+            latest.IsLatest = false;
+            _unitOfWork.GapAnalyses.Update(latest);
+        }
+
+        var newGap = new GapAnalysis
+        {
+            UserId = userId,
+            JdId = jdId,
+            AssessmentPathId = session.AssessmentPathId,
+            InputSource = priorCompletedGap.InputSource,
+            Version = (short)(priorCompletedGap.Version + 1),
+            IsLatest = true,
+            Status = GapAnalysisStatus.Pending,
+        };
+        _unitOfWork.GapAnalyses.Add(newGap);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        _gapAnalysisQueue.Enqueue(newGap.Id);
+
+        return new AutoTriggeredDto(newGap.Id, "pending");
     }
 
     private static string ToProficiency(int score, int max)

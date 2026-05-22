@@ -24,7 +24,7 @@ public static class DependencyInjection
         services.AddPersistence(configuration);
         services.AddSecurity();
         services.AddBackgroundJobs(configuration);
-        services.AddParsing();
+        services.AddParsing(configuration);
         return services;
     }
 
@@ -72,17 +72,41 @@ public static class DependencyInjection
 
         services.AddScoped<IAssessmentGenerateQueue, HangfireAssessmentGenerateQueue>();
         services.AddScoped<AssessmentGenerateJob>();
+
+        services.AddScoped<IGapAnalysisQueue, HangfireGapAnalysisQueue>();
+        services.AddScoped<GapAnalysisJob>();
         return services;
     }
 
-    private static IServiceCollection AddParsing(this IServiceCollection services)
+    private static IServiceCollection AddParsing(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddScoped<IJdParser, FakeJdParser>();
-        services.AddScoped<ICvParser, FakeCvParser>();
-        services.AddScoped<IAssessmentQuestionGenerator, FakeAssessmentQuestionGenerator>();
+        // Stateless / infrastructure-only services
         services.AddSingleton<IPdfTextExtractor, PdfPigTextExtractor>();
         services.AddSingleton<IAnonymizer, RegexAnonymizer>();
         services.AddSingleton<IFileStorage, LocalFileStorage>();
+
+        // Always register both fake and AI parsers; the binding for the I* interface
+        // is decided by the "Ai:Enabled" flag (or per-pipeline overrides) below.
+        services.AddScoped<FakeJdParser>();
+        services.AddScoped<FakeCvParser>();
+        services.AddScoped<FakeAssessmentQuestionGenerator>();
+        services.AddScoped<FakeGapAnalyzer>();
+        services.AddScoped<OpenAiGapAnalyzer>();
+
+        var aiEnabled = configuration.GetValue<bool>("Ai:Enabled", false);
+
+        // JD / CV / Question generators stay on the fake heuristic until their OpenAI
+        // implementations land. Wiring them follows the exact same pattern as the
+        // gap analyzer below.
+        services.AddScoped<IJdParser>(sp => sp.GetRequiredService<FakeJdParser>());
+        services.AddScoped<ICvParser>(sp => sp.GetRequiredService<FakeCvParser>());
+        services.AddScoped<IAssessmentQuestionGenerator>(sp => sp.GetRequiredService<FakeAssessmentQuestionGenerator>());
+
+        services.AddScoped<IGapAnalyzer>(sp =>
+            aiEnabled
+                ? sp.GetRequiredService<OpenAiGapAnalyzer>()
+                : sp.GetRequiredService<FakeGapAnalyzer>());
+
         return services;
     }
 }
