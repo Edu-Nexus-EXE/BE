@@ -34,6 +34,23 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
 
         var hashedPassword = _passwordHasher.HashPassword(request.Request.Password);
 
+        var baseSlug = Edu_Nexus.Application.Helpers.SlugHelper.GenerateSlug(request.Request.FullName);
+        var finalSlug = baseSlug;
+        bool isUnique = false;
+        
+        while (!isUnique)
+        {
+            var exists = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.PortfolioUrlSlug == finalSlug, "", cancellationToken);
+            if (exists == null)
+            {
+                isUnique = true;
+            }
+            else
+            {
+                finalSlug = $"{baseSlug}-{Guid.NewGuid().ToString("N")[..4]}";
+            }
+        }
+
         var user = new User
         {
             Email = request.Request.Email,
@@ -42,6 +59,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
             AuthProvider = AuthProvider.Email,
             Role = UserRole.User,
             IsSurveyCompleted = false,
+            PortfolioUrlSlug = finalSlug
         };
 
         _unitOfWork.Users.Add(user);

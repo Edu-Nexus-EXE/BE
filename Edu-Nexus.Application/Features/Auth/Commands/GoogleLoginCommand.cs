@@ -36,15 +36,34 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Aut
 
         if (user == null)
         {
+            var fullName = payload.Name ?? payload.Email;
+            var baseSlug = Edu_Nexus.Application.Helpers.SlugHelper.GenerateSlug(fullName);
+            var finalSlug = baseSlug;
+            bool isUnique = false;
+            
+            while (!isUnique)
+            {
+                var exists = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.PortfolioUrlSlug == finalSlug, "", cancellationToken);
+                if (exists == null)
+                {
+                    isUnique = true;
+                }
+                else
+                {
+                    finalSlug = $"{baseSlug}-{Guid.NewGuid().ToString("N")[..4]}";
+                }
+            }
+
             user = new User
             {
                 Email = payload.Email,
-                FullName = payload.Name ?? payload.Email,
+                FullName = fullName,
                 GoogleSub = payload.Subject,
                 AvatarUrl = payload.Picture,
                 AuthProvider = AuthProvider.Google,
                 Role = UserRole.User,
-                IsSurveyCompleted = false
+                IsSurveyCompleted = false,
+                PortfolioUrlSlug = finalSlug
             };
             
             _unitOfWork.Users.Add(user);

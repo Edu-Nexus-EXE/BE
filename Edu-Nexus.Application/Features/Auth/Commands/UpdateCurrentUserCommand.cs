@@ -33,24 +33,35 @@ public class UpdateCurrentUserCommandHandler : IRequestHandler<UpdateCurrentUser
             throw new Exception("404 USER_NOT_FOUND");
         }
 
-        if (!string.IsNullOrEmpty(request.Request.PortfolioUrlSlug))
+        if (!string.IsNullOrWhiteSpace(request.Request.FullName))
         {
-            var slugRegex = new Regex(@"^[a-z0-9-]{3,50}$");
-            if (!slugRegex.IsMatch(request.Request.PortfolioUrlSlug))
-            {
-                throw new Exception("422 INVALID_SLUG");
-            }
-
-            var existingSlugUser = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.PortfolioUrlSlug == request.Request.PortfolioUrlSlug && u.Id != currentUserId.Value && u.DeletedAt == null, "", cancellationToken);
-            if (existingSlugUser != null)
-            {
-                throw new Exception("409 SLUG_TAKEN");
-            }
+            user.FullName = request.Request.FullName;
         }
 
-        user.FullName = request.Request.FullName;
-        user.AvatarUrl = request.Request.AvatarUrl;
-        user.PortfolioUrlSlug = request.Request.PortfolioUrlSlug;
+        if (request.Request.AvatarUrl != null)
+        {
+            user.AvatarUrl = request.Request.AvatarUrl == "" ? null : request.Request.AvatarUrl;
+        }
+
+        if (request.Request.PortfolioUrlSlug != null)
+        {
+            var slug = request.Request.PortfolioUrlSlug == "" ? null : request.Request.PortfolioUrlSlug;
+            if (slug != null)
+            {
+                var slugRegex = new Regex(@"^[a-z0-9-]{3,50}$");
+                if (!slugRegex.IsMatch(slug))
+                {
+                    throw new Exception("422 INVALID_SLUG");
+                }
+
+                var existingSlugUser = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.PortfolioUrlSlug == slug && u.Id != currentUserId.Value && u.DeletedAt == null, "", cancellationToken);
+                if (existingSlugUser != null)
+                {
+                    throw new Exception("409 SLUG_TAKEN");
+                }
+            }
+            user.PortfolioUrlSlug = slug;
+        }
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

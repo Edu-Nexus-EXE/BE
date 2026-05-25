@@ -84,9 +84,11 @@ public class CreateAssessmentPathCommandHandler : IRequestHandler<CreateAssessme
         var assessmentQuota = subscription?.Tier?.AssessmentQuota ?? 3;
         if (assessmentQuota < 0) return;
 
-        var current = (await _unitOfWork.AssessmentPaths.FindAsync(
+        var allPaths = await _unitOfWork.AssessmentPaths.FindAsync(
             p => p.UserId == userId && p.PathType == PathType.Assessment,
-            "", ct)).Count();
+            "Jd", ct);
+
+        var current = allPaths.Count(p => p.Jd != null && p.Jd.DeletedAt == null);
 
         if (current >= assessmentQuota)
         {

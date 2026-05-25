@@ -183,9 +183,9 @@ public class SubmitAssessmentSessionCommandHandler : IRequestHandler<SubmitAsses
         var percent = (decimal)score / max;
         return percent switch
         {
-            >= 0.75m => "advanced",
+            >= 0.80m => "advanced",
             >= 0.50m => "intermediate",
-            >= 0.25m => "beginner",
+            >= 0.20m => "basic",
             _ => "none"
         };
     }

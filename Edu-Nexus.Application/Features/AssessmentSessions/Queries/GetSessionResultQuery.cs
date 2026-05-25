@@ -61,12 +61,13 @@ public class GetSessionResultQueryHandler : IRequestHandler<GetSessionResultQuer
         AutoTriggeredDto? autoTriggered = null;
         if (session.AssessmentPath != null)
         {
-            var prior = await _unitOfWork.GapAnalyses.FirstOrDefaultAsync(
-                g => g.JdId == session.AssessmentPath.JdId && g.Status == GapAnalysisStatus.Completed,
+            var latestGap = await _unitOfWork.GapAnalyses.FirstOrDefaultAsync(
+                g => g.JdId == session.AssessmentPath.JdId && g.UserId == userId && g.IsLatest,
                 "", cancellationToken);
-            if (prior != null)
+            
+            if (latestGap != null && latestGap.Version > 1)
             {
-                autoTriggered = new AutoTriggeredDto(prior.Id, "pending");
+                autoTriggered = new AutoTriggeredDto(latestGap.Id, latestGap.Status.ToString().ToLower());
             }
         }
 
