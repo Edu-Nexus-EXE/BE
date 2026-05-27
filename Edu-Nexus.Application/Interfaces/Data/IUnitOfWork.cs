@@ -20,6 +20,9 @@ public interface IUnitOfWork
     IRepository<AssessmentAnswer> AssessmentAnswers { get; }
     IRepository<GapAnalysisSkill> GapAnalysisSkills { get; }
     IRepository<Skill> Skills { get; }
+    IRepository<RoadmapNode> RoadmapNodes { get; }
+    IRepository<LearningResource> LearningResources { get; }
+    IRepository<SkillResource> SkillResources { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

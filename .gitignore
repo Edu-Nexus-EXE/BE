@@ -75,3 +75,4 @@ artifacts/
 # Điểm crash dump hệ thống
 *.stackdump
 *.dmp
+!db/init/*.sql
