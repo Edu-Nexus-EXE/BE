@@ -23,6 +23,8 @@ public interface IUnitOfWork
     IRepository<RoadmapNode> RoadmapNodes { get; }
     IRepository<LearningResource> LearningResources { get; }
     IRepository<SkillResource> SkillResources { get; }
+    IRepository<CareerTrack> CareerTracks { get; }
+    IRepository<CareerTrackJd> CareerTrackJds { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

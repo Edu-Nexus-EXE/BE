@@ -29,6 +29,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         RoadmapNodes = new Repository<RoadmapNode>(_context);
         LearningResources = new Repository<LearningResource>(_context);
         SkillResources = new Repository<SkillResource>(_context);
+        CareerTracks = new Repository<CareerTrack>(_context);
+        CareerTrackJds = new Repository<CareerTrackJd>(_context);
     }
 
     public IRepository<User> Users { get; private set; }
@@ -50,6 +52,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IRepository<RoadmapNode> RoadmapNodes { get; private set; }
     public IRepository<LearningResource> LearningResources { get; private set; }
     public IRepository<SkillResource> SkillResources { get; private set; }
+    public IRepository<CareerTrack> CareerTracks { get; private set; }
+    public IRepository<CareerTrackJd> CareerTrackJds { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
