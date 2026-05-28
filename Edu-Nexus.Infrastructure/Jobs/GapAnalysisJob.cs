@@ -224,7 +224,7 @@ public class GapAnalysisJob
         if (string.IsNullOrEmpty(raw)) return null;
         return raw.ToLowerInvariant() switch
         {
-            "basic" or "basic" => SkillLevel.Basic,
+            "basic" => SkillLevel.Basic,
             "intermediate" => SkillLevel.Intermediate,
             "advanced" => SkillLevel.Advanced,
             _ => SkillLevel.None,

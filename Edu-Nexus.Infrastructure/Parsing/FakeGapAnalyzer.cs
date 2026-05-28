@@ -5,7 +5,7 @@ namespace Edu_Nexus.Infrastructure.Parsing;
 /// Heuristic Gap Analyzer:
 /// - For each JD skill: check CV (Path A) or Assessment (Path B) for evidence.
 ///   - Not found              -> Missing  (target=intermediate, urgency 8/9 if mandatory)
-///   - Found beginner level    -> NeedsUpgrade (urgency 5-6)
+///   - Found basic level    -> NeedsUpgrade (urgency 5-6)
 ///   - Found intermediate/advanced -> Have (urgency 1-3)
 /// Replace with LLM-backed analyzer by swapping the DI registration of IGapAnalyzer.
 public class FakeGapAnalyzer : IGapAnalyzer
@@ -88,7 +88,7 @@ public class FakeGapAnalyzer : IGapAnalyzer
         {
             "advanced" or "expert" => "advanced",
             "intermediate" => "intermediate",
-            "basic" or "basic" => "basic",
+            "basic" => "basic",
             _ => "none"
         };
     }
