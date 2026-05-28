@@ -1,3 +1,4 @@
+using Edu_Nexus.Application.Features.LearningResources.Queries;
 using Edu_Nexus.Application.Features.Roadmaps.Commands;
 using Edu_Nexus.Application.Features.Roadmaps.Queries;
 using MediatR;
@@ -178,6 +179,29 @@ public class RoadmapsController : ControllerBase
         catch (Exception ex) when (ex.Message == "422 INVALID_STATUS")
         {
             return UnprocessableEntity(new { error = new { code = "INVALID_STATUS", message = "Roadmap này không ở trạng thái Outdated." } });
+        }
+    }
+
+    // S2.4 Learning Resources
+    [HttpGet("roadmap-nodes/{nodeId:guid}/resources")]
+    public async Task<IActionResult> GetNodeResources(Guid nodeId)
+    {
+        try
+        {
+            var result = await _mediator.Send(new GetNodeResourcesQuery(nodeId));
+            return Ok(new { data = result });
+        }
+        catch (Exception ex) when (ex.Message == "401 UNAUTHORIZED")
+        {
+            return Unauthorized();
+        }
+        catch (Exception ex) when (ex.Message == "404 NOT_FOUND")
+        {
+            return NotFound(new { error = new { code = "NOT_FOUND", message = "Node không tồn tại hoặc bạn không có quyền truy cập." } });
+        }
+        catch (Exception ex) when (ex.Message == "403 ROADMAP_ARCHIVED")
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { error = new { code = "ROADMAP_ARCHIVED", message = "Roadmap đã được archive, không thể xem resources." } });
         }
     }
 }
