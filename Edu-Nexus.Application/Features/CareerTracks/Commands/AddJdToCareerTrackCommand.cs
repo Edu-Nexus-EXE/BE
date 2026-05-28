@@ -30,28 +30,28 @@ public class AddJdToCareerTrackCommandHandler : IRequestHandler<AddJdToCareerTra
     public async Task<Unit> Handle(AddJdToCareerTrackCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId 
-            ?? throw new UnauthorizedAccessException("User is not authenticated.");
+            ?? throw new Exception("401 UNAUTHORIZED");
 
         // Check if Career Track exists and belongs to user
         var careerTrackExists = (await _unitOfWork.CareerTracks
             .FindAsync(ct => ct.Id == request.CareerTrackId && ct.UserId == userId, "", cancellationToken)).Any();
             
         if (!careerTrackExists)
-            throw new KeyNotFoundException($"CareerTrack with id {request.CareerTrackId} not found.");
+            throw new Exception("404 NOT_FOUND");
 
         // Check if JD exists and belongs to user
         var jdExists = (await _unitOfWork.JdSubmissions
             .FindAsync(jd => jd.Id == request.JdId && jd.UserId == userId, "", cancellationToken)).Any();
             
         if (!jdExists)
-            throw new KeyNotFoundException($"JdSubmission with id {request.JdId} not found.");
+            throw new Exception("404 NOT_FOUND");
 
         // Check if already exists
         var existingLink = (await _unitOfWork.CareerTrackJds
             .FindAsync(ctj => ctj.CareerTrackId == request.CareerTrackId && ctj.JdId == request.JdId, "", cancellationToken)).Any();
             
         if (existingLink)
-            throw new InvalidOperationException("JD is already in the career track.");
+            throw new Exception("409 CONFLICT");
 
         var newLink = new CareerTrackJd
         {

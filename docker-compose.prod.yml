@@ -14,9 +14,10 @@ services:
       - Jwt__Key=${JWT_KEY}
       - Jwt__Issuer=${JWT_ISSUER}
       - Jwt__Audience=${JWT_AUDIENCE}
-      - Jwt__ExpiryInMinutes=60
+      - Jwt__AccessTokenDurationMinutes=60
+      - Jwt__RefreshTokenDurationDays=7
       - OpenAI__ApiKey=${OPENAI_API_KEY}
-      - GoogleAuth__ClientId=${GOOGLE_CLIENT_ID}
+      - Google__ClientId=${GOOGLE_CLIENT_ID}
       - Ai__Enabled=true
     depends_on:
       db:

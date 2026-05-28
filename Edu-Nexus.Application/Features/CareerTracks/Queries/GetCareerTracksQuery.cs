@@ -29,7 +29,7 @@ public class GetCareerTracksQueryHandler : IRequestHandler<GetCareerTracksQuery,
     public async Task<List<CareerTrackDto>> Handle(GetCareerTracksQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId 
-            ?? throw new UnauthorizedAccessException("User is not authenticated.");
+            ?? throw new Exception("401 UNAUTHORIZED");
 
         var careerTracks = (await _unitOfWork.CareerTracks
             .FindAsync(ct => ct.UserId == userId, "CareerTrackJds", cancellationToken)).ToList();

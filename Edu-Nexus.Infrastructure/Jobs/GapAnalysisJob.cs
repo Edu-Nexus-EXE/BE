@@ -157,7 +157,7 @@ public class GapAnalysisJob
             {
                 result.Add(new CvSkillInput(
                     s.TryGetProperty("skillName", out var n) ? n.GetString() ?? "" : "",
-                    s.TryGetProperty("proficiencyLevel", out var p) ? p.GetString() ?? "beginner" : "beginner",
+                    s.TryGetProperty("proficiencyLevel", out var p) ? p.GetString() ?? "basic" : "basic",
                     s.TryGetProperty("yearsExp", out var y) && y.ValueKind == JsonValueKind.Number ? y.GetDecimal() : null));
             }
             return result;
@@ -224,7 +224,7 @@ public class GapAnalysisJob
         if (string.IsNullOrEmpty(raw)) return null;
         return raw.ToLowerInvariant() switch
         {
-            "basic" or "beginner" => SkillLevel.Basic,
+            "basic" or "basic" => SkillLevel.Basic,
             "intermediate" => SkillLevel.Intermediate,
             "advanced" => SkillLevel.Advanced,
             _ => SkillLevel.None,

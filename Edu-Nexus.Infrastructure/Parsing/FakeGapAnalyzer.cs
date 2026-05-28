@@ -10,7 +10,7 @@ namespace Edu_Nexus.Infrastructure.Parsing;
 /// Replace with LLM-backed analyzer by swapping the DI registration of IGapAnalyzer.
 public class FakeGapAnalyzer : IGapAnalyzer
 {
-    private static readonly string[] LevelOrder = { "none", "beginner", "intermediate", "advanced" };
+    private static readonly string[] LevelOrder = { "none", "basic", "intermediate", "advanced" };
 
     public Task<GapAnalysisResult> AnalyzeAsync(GapAnalysisInput input, CancellationToken cancellationToken = default)
     {
@@ -50,7 +50,7 @@ public class FakeGapAnalyzer : IGapAnalyzer
 
     private static string TargetForSeniority(string seniority) => seniority switch
     {
-        "intern" or "fresher" => "beginner",
+        "intern" or "fresher" => "basic",
         "junior" => "intermediate",
         "middle" or "senior" or "lead" => "advanced",
         _ => "intermediate"
@@ -88,7 +88,7 @@ public class FakeGapAnalyzer : IGapAnalyzer
         {
             "advanced" or "expert" => "advanced",
             "intermediate" => "intermediate",
-            "beginner" or "basic" => "beginner",
+            "basic" or "basic" => "basic",
             _ => "none"
         };
     }

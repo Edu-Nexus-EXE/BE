@@ -14,7 +14,28 @@ env:
   IMAGE_NAME: ${{ github.repository_owner }}/edu-nexus-api
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ./Edu-Nexus
+
+      - name: Build
+        run: dotnet build ./Edu-Nexus --no-restore
+
+      - name: Test
+        run: dotnet test ./Edu-Nexus --no-build --verbosity normal
+
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

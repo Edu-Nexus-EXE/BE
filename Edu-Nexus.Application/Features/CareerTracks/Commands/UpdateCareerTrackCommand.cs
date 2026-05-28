@@ -29,13 +29,13 @@ public class UpdateCareerTrackCommandHandler : IRequestHandler<UpdateCareerTrack
     public async Task<Unit> Handle(UpdateCareerTrackCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId 
-            ?? throw new UnauthorizedAccessException("User is not authenticated.");
+            ?? throw new Exception("401 UNAUTHORIZED");
 
         var careerTrack = await _unitOfWork.CareerTracks
             .FirstOrDefaultAsync(ct => ct.Id == request.Id && ct.UserId == userId, "", cancellationToken);
 
         if (careerTrack == null)
-            throw new KeyNotFoundException($"CareerTrack with id {request.Id} not found.");
+            throw new Exception("404 NOT_FOUND");
 
         if (!string.IsNullOrEmpty(request.Name))
         {

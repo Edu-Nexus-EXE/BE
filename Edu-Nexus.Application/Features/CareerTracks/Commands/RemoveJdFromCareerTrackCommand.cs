@@ -29,20 +29,20 @@ public class RemoveJdFromCareerTrackCommandHandler : IRequestHandler<RemoveJdFro
     public async Task<Unit> Handle(RemoveJdFromCareerTrackCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId 
-            ?? throw new UnauthorizedAccessException("User is not authenticated.");
+            ?? throw new Exception("401 UNAUTHORIZED");
 
         // Check if Career Track exists and belongs to user
         var careerTrackExists = (await _unitOfWork.CareerTracks
             .FindAsync(ct => ct.Id == request.CareerTrackId && ct.UserId == userId, "", cancellationToken)).Any();
             
         if (!careerTrackExists)
-            throw new KeyNotFoundException($"CareerTrack with id {request.CareerTrackId} not found.");
+            throw new Exception("404 NOT_FOUND");
 
         var existingLink = await _unitOfWork.CareerTrackJds
             .FirstOrDefaultAsync(ctj => ctj.CareerTrackId == request.CareerTrackId && ctj.JdId == request.JdId, "", cancellationToken);
             
         if (existingLink == null)
-            throw new KeyNotFoundException($"CareerTrackJd with JdId {request.JdId} not found.");
+            throw new Exception("404 NOT_FOUND");
 
         _unitOfWork.CareerTrackJds.Remove(existingLink);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

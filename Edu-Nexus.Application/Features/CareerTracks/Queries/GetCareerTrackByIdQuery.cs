@@ -30,13 +30,13 @@ public class GetCareerTrackByIdQueryHandler : IRequestHandler<GetCareerTrackById
     public async Task<CareerTrackDetailDto> Handle(GetCareerTrackByIdQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId 
-            ?? throw new UnauthorizedAccessException("User is not authenticated.");
+            ?? throw new Exception("401 UNAUTHORIZED");
 
         var careerTrack = await _unitOfWork.CareerTracks
             .FirstOrDefaultAsync(ct => ct.Id == request.Id && ct.UserId == userId, "CareerTrackJds.Jd", cancellationToken);
 
         if (careerTrack == null)
-            throw new KeyNotFoundException($"CareerTrack with id {request.Id} not found.");
+            throw new Exception("404 NOT_FOUND");
 
         var jdIds = careerTrack.CareerTrackJds.Select(ctj => ctj.JdId).ToList();
 

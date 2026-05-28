@@ -31,7 +31,7 @@ public class CreateCareerTrackCommandHandler : IRequestHandler<CreateCareerTrack
     public async Task<CareerTrackDto> Handle(CreateCareerTrackCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId 
-            ?? throw new UnauthorizedAccessException("User is not authenticated.");
+            ?? throw new Exception("401 UNAUTHORIZED");
 
         // Quota check
         var userSub = await _unitOfWork.UserSubscriptions
@@ -44,7 +44,7 @@ public class CreateCareerTrackCommandHandler : IRequestHandler<CreateCareerTrack
 
         if (currentCount >= quota)
         {
-            throw new InvalidOperationException($"Career track quota exceeded. Maximum allowed: {quota}");
+            throw new Exception($"403 QUOTA_EXCEEDED|careerTrack|{currentCount}|{quota}");
         }
 
         var careerTrack = new CareerTrack
