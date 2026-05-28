@@ -75,6 +75,10 @@ public static class DependencyInjection
 
         services.AddScoped<IGapAnalysisQueue, HangfireGapAnalysisQueue>();
         services.AddScoped<GapAnalysisJob>();
+        
+        services.AddScoped<IRoadmapGenerateQueue, RoadmapGenerateQueue>();
+        services.AddScoped<RoadmapGenerateJob>();
+        
         return services;
     }
 

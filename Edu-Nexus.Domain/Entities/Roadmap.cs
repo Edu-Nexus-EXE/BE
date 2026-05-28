@@ -15,7 +15,7 @@ public partial class Roadmap
 
     public Guid? GapAnalysisId { get; set; }
 
-    public string Title { get; set; } = null!;
+    public string? Title { get; set; }
 
     public int? EstimatedTotalHours { get; set; }
 

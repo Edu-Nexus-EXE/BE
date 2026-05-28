@@ -60,7 +60,7 @@ public class GetCvByPathQueryHandler : IRequestHandler<GetCvByPathQuery, CvDetai
                 {
                     skillsList.Add(new CvSkillDto(
                         SkillName: s.GetProperty("skillName").GetString() ?? "",
-                        ProficiencyLevel: s.TryGetProperty("proficiencyLevel", out var pl) ? pl.GetString() ?? "beginner" : "beginner",
+                        ProficiencyLevel: s.TryGetProperty("proficiencyLevel", out var pl) ? pl.GetString() ?? "basic" : "basic",
                         YearsExp: s.TryGetProperty("yearsExp", out var ye) && ye.ValueKind == JsonValueKind.Number ? ye.GetDecimal() : null,
                         Evidence: s.TryGetProperty("evidence", out var ev) ? ev.GetString() : null
                     ));

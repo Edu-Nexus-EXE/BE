@@ -30,6 +30,20 @@ public class GetGapAnalysisQueryHandler : IRequestHandler<GetGapAnalysisQuery, I
             "", cancellationToken)
             ?? throw new Exception("404 JD_NOT_FOUND");
 
+        var requestAll = request.All;
+        if (requestAll)
+        {
+            var subscription = await _unitOfWork.UserSubscriptions.FirstOrDefaultAsync(
+                s => s.UserId == userId && s.Status == Edu_Nexus.Domain.Enums.UserSubscriptions.UserSubscriptionStatus.Active,
+                "Tier", cancellationToken);
+
+            var canViewHistory = subscription?.Tier?.FullGapHistory ?? false;
+            if (!canViewHistory)
+            {
+                throw new Exception("403 FULL_HISTORY_REQUIRES_UPGRADE");
+            }
+        }
+
         var gaps = (await _unitOfWork.GapAnalyses.FindAsync(
             g => g.JdId == request.JdId && g.UserId == userId && (request.All || g.IsLatest),
             includeProperties: nameof(GapAnalysis.GapAnalysisSkills),

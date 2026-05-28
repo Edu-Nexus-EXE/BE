@@ -40,7 +40,7 @@ public class FakeCvParser : ICvParser
                 var mentions = CountMentions(text, s);
                 var level = mentions >= 3 ? "advanced"
                           : mentions == 2 ? "intermediate"
-                          : "beginner";
+                          : "basic";
                 var yearsExp = totalYears.HasValue
                     ? Math.Min(totalYears.Value, mentions * 0.5m + 0.5m)
                     : (decimal?)null;

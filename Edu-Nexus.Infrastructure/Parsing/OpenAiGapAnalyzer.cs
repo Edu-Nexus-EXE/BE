@@ -58,8 +58,8 @@ public class OpenAiGapAnalyzer : IGapAnalyzer
 
         Quy tắc:
         - Với mỗi JD hard skill, đánh giá `gapStatus`: "missing" (user chưa có), "needs_upgrade" (có nhưng dưới target), "have" (đạt hoặc vượt).
-        - `currentLevel` ∈ {"none","beginner","intermediate","advanced"} dựa trên CV hoặc Assessment evidence.
-        - `targetLevel` dựa vào seniority JD: intern/fresher→beginner, junior→intermediate, middle/senior/lead→advanced.
+        - `currentLevel` ∈ {"none","basic","intermediate","advanced"} dựa trên CV hoặc Assessment evidence.
+        - `targetLevel` dựa vào seniority JD: intern/fresher→basic, junior→intermediate, middle/senior/lead→advanced.
         - `urgencyScore` 1-10: skill bắt buộc + missing = 9, optional + missing = 6, mandatory + needs_upgrade = 6, optional + needs_upgrade = 4, have = 1-2.
         - `reasoning` ngắn gọn (1-2 câu tiếng Việt) giải thích kết luận, kèm bằng chứng từ CV/Assessment nếu có.
         - `summary` 2-4 câu tổng quan: vị trí gì, thiếu/cần upgrade bao nhiêu skill, đề xuất ưu tiên dựa trên thời gian học onboarding.
@@ -71,8 +71,8 @@ public class OpenAiGapAnalyzer : IGapAnalyzer
             {
               "skillName": "string (giữ nguyên tên từ JD)",
               "gapStatus": "missing|needs_upgrade|have",
-              "currentLevel": "none|beginner|intermediate|advanced",
-              "targetLevel": "beginner|intermediate|advanced",
+              "currentLevel": "none|basic|intermediate|advanced",
+              "targetLevel": "basic|intermediate|advanced",
               "urgencyScore": 1-10,
               "reasoning": "string",
               "isMandatoryInJd": true|false

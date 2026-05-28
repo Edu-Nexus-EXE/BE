@@ -5,12 +5,12 @@ namespace Edu_Nexus.Infrastructure.Parsing;
 /// Heuristic Gap Analyzer:
 /// - For each JD skill: check CV (Path A) or Assessment (Path B) for evidence.
 ///   - Not found              -> Missing  (target=intermediate, urgency 8/9 if mandatory)
-///   - Found beginner level    -> NeedsUpgrade (urgency 5-6)
+///   - Found basic level    -> NeedsUpgrade (urgency 5-6)
 ///   - Found intermediate/advanced -> Have (urgency 1-3)
 /// Replace with LLM-backed analyzer by swapping the DI registration of IGapAnalyzer.
 public class FakeGapAnalyzer : IGapAnalyzer
 {
-    private static readonly string[] LevelOrder = { "none", "beginner", "intermediate", "advanced" };
+    private static readonly string[] LevelOrder = { "none", "basic", "intermediate", "advanced" };
 
     public Task<GapAnalysisResult> AnalyzeAsync(GapAnalysisInput input, CancellationToken cancellationToken = default)
     {
@@ -50,7 +50,7 @@ public class FakeGapAnalyzer : IGapAnalyzer
 
     private static string TargetForSeniority(string seniority) => seniority switch
     {
-        "intern" or "fresher" => "beginner",
+        "intern" or "fresher" => "basic",
         "junior" => "intermediate",
         "middle" or "senior" or "lead" => "advanced",
         _ => "intermediate"
@@ -88,7 +88,7 @@ public class FakeGapAnalyzer : IGapAnalyzer
         {
             "advanced" or "expert" => "advanced",
             "intermediate" => "intermediate",
-            "beginner" or "basic" => "beginner",
+            "basic" => "basic",
             _ => "none"
         };
     }
