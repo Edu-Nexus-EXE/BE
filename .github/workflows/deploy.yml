@@ -83,6 +83,9 @@ jobs:
           scp -P ${{ secrets.SSH_PORT || '22' }} \
               docker-compose.prod.yml \
               ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/edu-nexus/docker-compose.yml
+          scp -P ${{ secrets.SSH_PORT || '22' }} \
+              Caddyfile \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/edu-nexus/Caddyfile
           scp -P ${{ secrets.SSH_PORT || '22' }} -r \
               db/init/. \
               ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/edu-nexus/db/init/
