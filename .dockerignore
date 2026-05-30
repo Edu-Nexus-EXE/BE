@@ -1,16 +1,32 @@
+# Git
 .git
 .gitignore
-.env
-.dockerignore
-Dockerfile
-docker-compose.yml
-docker-compose.prod.yml
-**/bin/
-**/obj/
-.vs/
-.vscode/
+.github
+
+# Build outputs
+**/bin
+**/obj
+**/out
+**/publish
+
+# IDE
+.vs
+.vscode
+.idea
 *.user
 *.suo
-*.userosscache
-*.sln.docstates
-*.log
+
+# Secrets — never bake into image
+**/appsettings.json
+**/appsettings.*.json
+**/*.usersecrets
+.env
+.env.*
+
+# Docs / misc
+*.md
+docker-compose*.yml
+Dockerfile
+
+# Uploaded files (built at runtime)
+**/wwwroot/uploads

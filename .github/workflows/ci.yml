@@ -1,0 +1,29 @@
+name: CI (Check Build)
+
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build:
+    name: Check Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore ./Edu-Nexus.slnx
+
+    - name: Build
+      run: dotnet build ./Edu-Nexus.slnx --no-restore --configuration Release
+      
+    # (Tuỳ chọn) Bỏ comment 2 dòng dưới nếu team có viết Unit Test:
+    # - name: Test
+    #   run: dotnet test ./Edu-Nexus.slnx --no-build --verbosity normal

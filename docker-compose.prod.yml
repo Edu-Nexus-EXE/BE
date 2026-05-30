@@ -1,63 +1,92 @@
-version: '3.8'
+# Production stack — deploy lên VPS qua GitHub Actions.
+# Image API được pull từ GHCR (build từ CI, không build trên server).
+#
+# File này KHÔNG tự đọc .env.example. Tạo file `.env` thật (cùng folder)
+# với các secret thực tế trước khi `docker compose up`.
 
 services:
   api:
-    image: ghcr.io/${GHCR_USERNAME}/edu-nexus-api:latest
+    image: ${API_IMAGE:-ghcr.io/edu-nexus-exe/be:latest}
     container_name: edu-nexus-api
-    restart: always
-    ports:
-      - "80:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
-      - ConnectionStrings__Redis=redis:6379,abortConnect=false
-      - Jwt__Key=${JWT_KEY}
-      - Jwt__Issuer=${JWT_ISSUER}
-      - Jwt__Audience=${JWT_AUDIENCE}
-      - Jwt__AccessTokenDurationMinutes=60
-      - Jwt__RefreshTokenDurationDays=7
-      - OpenAI__ApiKey=${OPENAI_API_KEY}
-      - Google__ClientId=${GOOGLE_CLIENT_ID}
-      - Ai__Enabled=true
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      Logging__LogLevel__Default: "Information"
+      Logging__LogLevel__Microsoft.AspNetCore: "Warning"
+      AllowedHosts: "*"
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};"
+      ConnectionStrings__Redis: "redis:6379"
+      Jwt__Key: ${JWT_KEY}
+      Jwt__Issuer: ${JWT_ISSUER:-Edu-Nexus-Api}
+      Jwt__Audience: ${JWT_AUDIENCE:-Edu-Nexus-Clients}
+      Jwt__AccessTokenDurationMinutes: ${JWT_ACCESS_MIN:-15}
+      Jwt__RefreshTokenDurationDays: ${JWT_REFRESH_DAYS:-30}
+      Google__ClientId: ${GOOGLE_CLIENT_ID}
+      Ai__Enabled: ${AI_ENABLED:-false}
+      OpenAI__ApiKey: ${OPENAI_API_KEY:-}
+      OpenAI__Embedding: "text-embedding-3-small"
+      OpenAI__Models__Fast: "gpt-4o-mini"
+      OpenAI__Models__Smart: "gpt-4o"
+      OpenAI__MaxTokens__JdParse: 800
+      OpenAI__MaxTokens__CvParse: 1000
+      OpenAI__MaxTokens__Assessment: 3000
+      OpenAI__MaxTokens__GapAnalysis: 1500
+      OpenAI__MaxTokens__Roadmap: 4000
+      OpenAI__MaxTokens__ResourceSuggestion: 600
+      Rag__ChunkSize: 800
+      Rag__ChunkOverlap: 100
+      Rag__MinSimilarityScore: 0.65
+      Rag__TopK: 5
+    volumes:
+      - api-uploads:/app/wwwroot/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ >/dev/null 2>&1 || exit 0"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   db:
     image: pgvector/pgvector:pg16
     container_name: edu-nexus-db
-    restart: always
+    restart: unless-stopped
     environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # Postgres tự chạy mọi file *.sql trong /docker-entrypoint-initdb.d/ KHI volume rỗng (lần đầu init).
+    # Sau đó volume có data → không chạy lại. Muốn re-init: `docker compose down -v` (XOÁ DATA).
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d
+      - db-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   redis:
     image: redis:7-alpine
     container_name: edu-nexus-redis
-    restart: always
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
-      - redisdata:/data
+      - redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 5s
+      timeout: 3s
       retries: 5
 
 volumes:
-  pgdata:
-  redisdata:
+  db-data:
+  redis-data:
+  api-uploads:

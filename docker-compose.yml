@@ -34,6 +34,4 @@ services:
 
 volumes:
   edu-nexus-db-data:
-    external: true
-    name: 2a981b6af481ec968c5367b16d55a7d93966444287f7aef49ba54a1fac72847e
   edu-nexus-redis-data:

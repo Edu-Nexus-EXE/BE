@@ -1,119 +1,109 @@
-name: CI/CD Pipeline
+name: Build & Deploy BE
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  # Image name must be lowercase. Using hardcoded repository name or converting repo name to lowercase.
-  IMAGE_NAME: ${{ github.repository_owner }}/edu-nexus-api
+  IMAGE_NAME: edu-nexus-exe/be   # Explicit lowercase (Docker doesn't support uppercase)
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Restore dependencies
-        run: dotnet restore ./Edu-Nexus
-
-      - name: Build
-        run: dotnet build ./Edu-Nexus --no-restore
-
-      - name: Test
-        run: dotnet test ./Edu-Nexus --no-build --verbosity normal
-
-  build-and-push:
-    needs: test
+  # ===================================================================
+  # 1. BUILD image trên runner GitHub Actions → push lên GHCR.
+  # ===================================================================
+  build:
+    name: Build & Push image
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
-    
-    steps:
-      - name: Lowercase image name
-        run: echo "IMAGE_NAME_LOWER=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      packages: write   # cần để push lên GHCR
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
 
-      - name: Checkout repository
+    steps:
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log in to the Container registry
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest
-            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+      - name: Build & push
+        uses: docker/build-push-action@v6
         with:
-          context: ./Edu-Nexus
-          file: ./Edu-Nexus/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          context: .
+          file: ./Dockerfile
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
+  # ===================================================================
+  # 2. DEPLOY: SSH vào VPS → đồng bộ compose + init SQL → docker compose up.
+  # ===================================================================
   deploy:
-    needs: build-and-push
-    if: github.event_name != 'pull_request'
+    name: Deploy to VPS
     runs-on: ubuntu-latest
-    
+    needs: build
+    if: github.ref == 'refs/heads/main'
+
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Copy files via SSH
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "Edu-Nexus/docker-compose.prod.yml,Edu-Nexus/db/init/01-schema.sql"
-          target: "~/edu-nexus-deploy"
-          strip_components: 1
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H -p ${{ secrets.SSH_PORT || '22' }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ~/edu-nexus-deploy
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Create .env file for docker-compose from GitHub Secrets
-            cat <<EOF > .env
-            GHCR_USERNAME=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-            DB_NAME=${{ secrets.DB_NAME }}
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            JWT_KEY=${{ secrets.JWT_KEY }}
-            JWT_ISSUER=${{ secrets.JWT_ISSUER }}
-            JWT_AUDIENCE=${{ secrets.JWT_AUDIENCE }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            EOF
-            
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
+      - name: Sync compose + db init to server
+        run: |
+          ssh -p ${{ secrets.SSH_PORT || '22' }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            'mkdir -p /opt/edu-nexus/db/init'
+          scp -P ${{ secrets.SSH_PORT || '22' }} \
+              docker-compose.prod.yml \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/edu-nexus/docker-compose.yml
+          scp -P ${{ secrets.SSH_PORT || '22' }} -r \
+              db/init/. \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/edu-nexus/db/init/
+
+      - name: Pull image & restart stack
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${GITHUB_SHA::7}"
+          ssh -p ${{ secrets.SSH_PORT || '22' }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} bash <<EOF
+            set -e
+            cd /opt/edu-nexus
+
+            if [ ! -f .env ]; then
+              echo "ERROR: /opt/edu-nexus/.env không tồn tại. Copy .env.example và điền secret trước khi deploy."
+              exit 1
+            fi
+
+            # Login GHCR để pull image (private package)
+            echo "${{ secrets.GHCR_READ_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_READ_USER }}" --password-stdin
+
+            export API_IMAGE="$IMAGE"
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
+          EOF
