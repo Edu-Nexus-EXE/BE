@@ -53,7 +53,14 @@ public class GenerateRoadmapCommandHandler : IRequestHandler<GenerateRoadmapComm
                 "", cancellationToken))
                 .Count();
 
-            if (activeRoadmapsCount >= quota)
+            var existingForJd = await _unitOfWork.Roadmaps.FindAsync(
+                r => r.UserId == userId && r.JdId == request.JdId && r.Status == RoadmapStatus.Active,
+                "", cancellationToken);
+            
+            var hasExistingActiveForThisJd = existingForJd.Any();
+            var effectiveCount = hasExistingActiveForThisJd ? activeRoadmapsCount - 1 : activeRoadmapsCount;
+
+            if (effectiveCount >= quota)
             {
                 throw new Exception($"403 QUOTA_EXCEEDED|roadmapActive|{activeRoadmapsCount}|{quota}");
             }
