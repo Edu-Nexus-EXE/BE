@@ -14,7 +14,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowMyFrontend",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173") // Điền địa chỉ frontend của bạn vào đây
+            policy.WithOrigins("http://localhost:5175") // Điền địa chỉ frontend của bạn vào đây
                   .AllowAnyHeader()
                   .AllowAnyMethod();
                   // .AllowCredentials(); // (Mở comment dòng này nếu bạn dùng cookie/session)

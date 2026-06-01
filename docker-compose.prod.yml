@@ -56,6 +56,8 @@ services:
     image: pgvector/pgvector:pg16
     container_name: edu-nexus-db
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"   # Chỉ mở cho localhost (SSH tunnel), KHÔNG mở ra Internet
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
