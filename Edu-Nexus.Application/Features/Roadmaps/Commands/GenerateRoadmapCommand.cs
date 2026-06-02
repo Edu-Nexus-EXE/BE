@@ -83,6 +83,7 @@ public class GenerateRoadmapCommandHandler : IRequestHandler<GenerateRoadmapComm
         {
             UserId = userId,
             JdId = request.JdId,
+            GapAnalysisId = gap.Id,
             Status = RoadmapStatus.Generating,
             Title = null, // Set by AI later
             ProgressPercent = 0,
