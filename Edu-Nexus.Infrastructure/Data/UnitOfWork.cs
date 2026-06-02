@@ -66,6 +66,11 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<int> ExecuteSqlAsync(string sql, params object[] parameters)
+    {
+        return await Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRawAsync(_context.Database, sql, parameters);
+    }
+
     public void Dispose()
     {
         _context.Dispose();

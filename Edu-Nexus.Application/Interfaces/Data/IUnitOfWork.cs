@@ -30,4 +30,5 @@ public interface IUnitOfWork
     IRepository<PortfolioProject> PortfolioProjects { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task<int> ExecuteSqlAsync(string sql, params object[] parameters);
 }
