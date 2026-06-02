@@ -88,6 +88,7 @@ public static class DependencyInjection
         services.AddSingleton<IPdfTextExtractor, PdfPigTextExtractor>();
         services.AddSingleton<IAnonymizer, RegexAnonymizer>();
         services.AddSingleton<IFileStorage, LocalFileStorage>();
+        services.AddHttpClient<IJdUrlFetcherService, JdUrlFetcherService>();
 
         // Always register both fake and AI parsers; the binding for the I* interface
         // is decided by the "Ai:Enabled" flag (or per-pipeline overrides) below.

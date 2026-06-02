@@ -12,13 +12,15 @@ public class JdParseJob
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJdParser _jdParser;
     private readonly IAnonymizer _anonymizer;
+    private readonly IJdUrlFetcherService _jdUrlFetcher;
     private readonly ILogger<JdParseJob> _logger;
 
-    public JdParseJob(IUnitOfWork unitOfWork, IJdParser jdParser, IAnonymizer anonymizer, ILogger<JdParseJob> logger)
+    public JdParseJob(IUnitOfWork unitOfWork, IJdParser jdParser, IAnonymizer anonymizer, IJdUrlFetcherService jdUrlFetcher, ILogger<JdParseJob> logger)
     {
         _unitOfWork = unitOfWork;
         _jdParser = jdParser;
         _anonymizer = anonymizer;
+        _jdUrlFetcher = jdUrlFetcher;
         _logger = logger;
     }
 
@@ -40,6 +42,11 @@ public class JdParseJob
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var raw = jd.RawContent ?? string.Empty;
+            if (jd.SourceType == JdSourceType.Url && !string.IsNullOrWhiteSpace(jd.SourceUrl))
+            {
+                raw = await _jdUrlFetcher.FetchAsync(jd.SourceUrl, cancellationToken);
+                jd.RawContent = raw; // Save it back so we have the raw text
+            }
             var masked = _anonymizer.Mask(raw);
             var parsed = await _jdParser.ParseAsync(masked, cancellationToken);
 
