@@ -25,6 +25,9 @@ public interface IUnitOfWork
     IRepository<SkillResource> SkillResources { get; }
     IRepository<CareerTrack> CareerTracks { get; }
     IRepository<CareerTrackJd> CareerTrackJds { get; }
+    IRepository<Portfolio> Portfolios { get; }
+    IRepository<PortfolioCertificate> PortfolioCertificates { get; }
+    IRepository<PortfolioProject> PortfolioProjects { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

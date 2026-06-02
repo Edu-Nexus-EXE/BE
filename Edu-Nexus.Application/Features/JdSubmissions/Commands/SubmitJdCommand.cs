@@ -84,11 +84,11 @@ public class SubmitJdCommandHandler : IRequestHandler<SubmitJdCommand, JdSubmiss
         {
             throw new Exception("422 SOURCE_URL_REQUIRED");
         }
-        if (string.IsNullOrWhiteSpace(req.RawContent))
+        if (sourceType == JdSourceType.Text && string.IsNullOrWhiteSpace(req.RawContent))
         {
             throw new Exception("422 RAW_CONTENT_REQUIRED");
         }
-        if (req.RawContent.Length > 50_000)
+        if (!string.IsNullOrWhiteSpace(req.RawContent) && req.RawContent.Length > 50_000)
         {
             throw new Exception("422 CONTENT_TOO_LONG");
         }
