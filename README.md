@@ -142,6 +142,31 @@ Local register/login, Google OAuth, refresh-token rotation, `GET/PUT /users/me`.
 
 ---
 
+## 🚀 Implemented Sprint 2 Features
+
+### S2.1 Gap Analysis (FR2.4)
+LLM-based gap analysis runs async via `GapAnalysisJob`. Calculates `gapStatus` (missing, needs_upgrade) and assigns `urgencyScore`. Exposes `POST/GET /jd-submissions/:jdId/gap-analysis`.
+
+### S2.2 Roadmap (FR4)
+Roadmap generator builds a structured learning path with prerequisites. Fetches FPTU curriculum and suggested learning resources. `POST/GET /roadmaps` and `PATCH /roadmap-nodes/:nodeId/status` to track progress. Auto-resolves outdated roadmaps (FR3.5).
+
+### S2.3 Career Track (FR4.5)
+`POST/GET/PUT/DELETE /career-tracks` for managing folders of JDs. Aggregates `overallProgress` across multiple roadmaps.
+
+### S2.4 Learning Resources (FR5)
+`GET /roadmap-nodes/:nodeId/resources` retrieves matched resources ranked by user onboarding preferences (FR5.2).
+
+---
+
+## 🎨 Implemented Sprint 3 Features
+
+### S3.1 Portfolio (FR6)
+`GET/PUT /portfolio` to manage user bio, headline, and visibility settings.
+`POST/PUT/DELETE /portfolio/certificates` and `POST/PUT/DELETE /portfolio/projects` to manage achievements. Includes Quota enforcement.
+Public portfolio access via `GET /p/:slug`.
+
+---
+
 ## 🧱 Architecture Notes
 
 ### Async pipelines via Hangfire
@@ -208,9 +233,7 @@ Open `/hangfire` in parallel to watch each pipeline finish.
 
 ## 🛣️ Roadmap
 
-- **S2.1 Gap Analysis** (FR2.4) — wires `IGapAnalysisQueue`, fills the FR3.5 auto-trigger that S1.5/S1.6 left as TODOs.
-- **S2.2 Roadmap** (FR4) — LLM roadmap generation + resource matching.
-- **S2.3 Career Track**, **S2.4 Resources**.
-- **Sprint 3** — Portfolio, Subscriptions, Admin.
+- **S3.2 Subscription & Payment** (FR8) — Tier management, VNPay integration, Quota logic.
+- **S3.3 Admin Module** (FR9) — Skills taxonomy management, RAG docs ingestion, Resource review queue.
 
 When the real LLM/RAG pipelines come online, the only changes are DI rebinds in `Edu-Nexus.Infrastructure/DependencyInjection.cs` plus environment configuration.
