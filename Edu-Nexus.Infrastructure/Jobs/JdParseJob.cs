@@ -11,12 +11,14 @@ public class JdParseJob
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJdParser _jdParser;
+    private readonly IAnonymizer _anonymizer;
     private readonly ILogger<JdParseJob> _logger;
 
-    public JdParseJob(IUnitOfWork unitOfWork, IJdParser jdParser, ILogger<JdParseJob> logger)
+    public JdParseJob(IUnitOfWork unitOfWork, IJdParser jdParser, IAnonymizer anonymizer, ILogger<JdParseJob> logger)
     {
         _unitOfWork = unitOfWork;
         _jdParser = jdParser;
+        _anonymizer = anonymizer;
         _logger = logger;
     }
 
@@ -38,7 +40,8 @@ public class JdParseJob
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var raw = jd.RawContent ?? string.Empty;
-            var parsed = await _jdParser.ParseAsync(raw, cancellationToken);
+            var masked = _anonymizer.Mask(raw);
+            var parsed = await _jdParser.ParseAsync(masked, cancellationToken);
 
             jd.JobTitle = parsed.JobTitle;
             jd.JobRoleCategory = parsed.JobRoleCategory;
