@@ -9,7 +9,7 @@ namespace Edu_Nexus.APIs.Controllers;
 
 [ApiController]
 [Route("admin/skills")]
-[Authorize(Roles = "Admin,admin")]
+[Authorize(Roles = "admin")]
 public class AdminSkillsController : ControllerBase
 {
     private readonly IMediator _mediator;
