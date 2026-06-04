@@ -32,23 +32,8 @@ public class GetMyPortfolioQueryHandler : IRequestHandler<GetMyPortfolioQuery, P
         var user = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.Id == userId, "", cancellationToken)
             ?? throw new Exception("401 UNAUTHORIZED");
 
-        var portfolio = await _unitOfWork.Portfolios.FirstOrDefaultAsync(p => p.UserId == userId, "", cancellationToken);
-
-        if (portfolio == null)
-        {
-            // Auto create if not exist
-            portfolio = new Portfolio
-            {
-                UserId = userId,
-                ShowCompletedSkills = true,
-                ShowCertificates = true,
-                ShowProjects = true,
-                IsPublic = false,
-                UpdatedAt = DateTime.UtcNow
-            };
-            _unitOfWork.Portfolios.Add(portfolio);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
+        var portfolio = await _unitOfWork.Portfolios.FirstOrDefaultAsync(p => p.UserId == userId, "", cancellationToken)
+            ?? DefaultPortfolio(userId);
 
         var certificates = await _unitOfWork.PortfolioCertificates.FindAsync(c => c.UserId == userId, "", cancellationToken);
         var projects = await _unitOfWork.PortfolioProjects.FindAsync(p => p.UserId == userId, "", cancellationToken);
@@ -135,4 +120,14 @@ public class GetMyPortfolioQueryHandler : IRequestHandler<GetMyPortfolioQuery, P
 
         return response;
     }
+
+    private static Portfolio DefaultPortfolio(Guid userId) => new()
+    {
+        UserId = userId,
+        ShowCompletedSkills = true,
+        ShowCertificates = true,
+        ShowProjects = true,
+        IsPublic = false,
+        UpdatedAt = DateTime.UtcNow
+    };
 }
