@@ -34,6 +34,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         Portfolios = new Repository<Portfolio>(_context);
         PortfolioCertificates = new Repository<PortfolioCertificate>(_context);
         PortfolioProjects = new Repository<PortfolioProject>(_context);
+        AdminActions = new Repository<AdminAction>(_context);
+        PaymentOrders = new Repository<PaymentOrder>(_context);
     }
 
     public IRepository<User> Users { get; private set; }
@@ -60,6 +62,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IRepository<Portfolio> Portfolios { get; private set; }
     public IRepository<PortfolioCertificate> PortfolioCertificates { get; private set; }
     public IRepository<PortfolioProject> PortfolioProjects { get; private set; }
+    public IRepository<AdminAction> AdminActions { get; private set; }
+    public IRepository<PaymentOrder> PaymentOrders { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

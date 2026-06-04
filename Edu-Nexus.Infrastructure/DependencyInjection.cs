@@ -1,9 +1,11 @@
+using Edu_Nexus.Application.Interfaces.Admin;
 using Edu_Nexus.Application.Interfaces.BackgroundJobs;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Parsing;
 using Edu_Nexus.Application.Interfaces.Portfolios;
 using Edu_Nexus.Application.Interfaces.Security;
 using Edu_Nexus.Application.Interfaces.Storage;
+using Edu_Nexus.Infrastructure.Admin;
 using Edu_Nexus.Infrastructure.BackgroundJobs;
 using Edu_Nexus.Infrastructure.Data;
 using Edu_Nexus.Infrastructure.Jobs;
@@ -51,6 +53,7 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddSingleton<IPortfolioUrlBuilder, PortfolioUrlBuilder>();
+        services.AddScoped<IAdminAuditLogger, AdminAuditLogger>();
         return services;
     }
 
