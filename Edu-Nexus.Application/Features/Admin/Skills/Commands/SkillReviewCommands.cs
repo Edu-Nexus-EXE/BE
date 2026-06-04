@@ -89,65 +89,73 @@ public class MergeSkillCommandHandler : IRequestHandler<MergeSkillCommand, Merge
             throw new Exception("422 INVALID_MERGE");
         }
 
-        var oldSkill = await _unitOfWork.Skills.GetByIdAsync(command.OldSkillId, cancellationToken) ?? throw new Exception("404 SKILL_NOT_FOUND");
-        var newSkill = await _unitOfWork.Skills.GetByIdAsync(command.NewSkillId, cancellationToken) ?? throw new Exception("404 SKILL_NOT_FOUND");
+        var oldId = command.OldSkillId;
+        var newId = command.NewSkillId;
+        var reason = command.Request?.Reason;
+
+        var oldSkill = await _unitOfWork.Skills.GetByIdAsync(oldId, cancellationToken) ?? throw new Exception("404 SKILL_NOT_FOUND");
+        var newSkill = await _unitOfWork.Skills.GetByIdAsync(newId, cancellationToken) ?? throw new Exception("404 SKILL_NOT_FOUND");
 
         var adminId = _currentUserService.UserId ?? throw new Exception("401 UNAUTHORIZED");
 
-        // We run a raw SQL block with a transaction.
-        // Npgsql parameters need to be used properly.
-        var sql = @"
-            DO $$
-            BEGIN
-                -- 1. Move usage references
-                UPDATE jd_skills SET skill_id = {1} WHERE skill_id = {0};
-                UPDATE gap_analysis_skills SET skill_id = {1} WHERE skill_id = {0};
-                UPDATE roadmap_nodes SET skill_id = {1} WHERE skill_id = {0};
-
-                -- 2. Move skill_resources
-                INSERT INTO skill_resources (id, skill_id, resource_id, is_primary, display_order, priority_score, created_at, updated_at)
-                SELECT gen_random_uuid(), {1}, resource_id, is_primary, display_order, priority_score, created_at, updated_at
-                FROM skill_resources WHERE skill_id = {0}
-                ON CONFLICT (skill_id, resource_id) DO NOTHING;
-
-                DELETE FROM skill_resources WHERE skill_id = {0};
-
-                -- 3. Move prerequisites
-                INSERT INTO skill_prerequisites (skill_id, prerequisite_id)
-                SELECT {1}, prerequisite_id FROM skill_prerequisites
-                  WHERE skill_id = {0} AND prerequisite_id <> {1}
-                ON CONFLICT (skill_id, prerequisite_id) DO NOTHING;
-
-                INSERT INTO skill_prerequisites (skill_id, prerequisite_id)
-                SELECT skill_id, {1} FROM skill_prerequisites
-                  WHERE prerequisite_id = {0} AND skill_id <> {1}
-                ON CONFLICT (skill_id, prerequisite_id) DO NOTHING;
-
-                DELETE FROM skill_prerequisites
-                  WHERE skill_id = {0} OR prerequisite_id = {0};
-
-                -- 4. Log admin action
-                INSERT INTO admin_actions (id, admin_user_id, action_type, target_id, target_type, metadata, created_at)
-                VALUES (gen_random_uuid(), {2}, 'merge_skill', {0}, 'skill', 
-                        jsonb_build_object('mergedInto', {1}, 'reason', {3}), NOW());
-
-                -- 5. Delete old skill
-                DELETE FROM skills WHERE id = {0};
-            END $$;
-        ";
-
-        await _unitOfWork.ExecuteSqlAsync(sql, command.OldSkillId, command.NewSkillId, adminId, command.Request.Reason ?? (object)DBNull.Value);
-
-        return new MergeSkillResponse
+        return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
-            OldSkillId = command.OldSkillId,
-            NewSkillId = command.NewSkillId,
-            // We just return dummy counts for now since DO block doesn't return rows affected easily in EF Core ExecuteSqlRaw
-            MovedRoadmapNodes = 0,
-            MovedJdSkills = 0,
-            MovedGapSkills = 0,
-            MovedResources = 0,
-            MovedPrerequisites = 0
-        };
+            // 1. Move usage references — every value below is parameterized via FormattableString.
+            int movedJdSkills = await _unitOfWork.ExecuteSqlAsync(
+                $"UPDATE jd_skills SET skill_id = {newId} WHERE skill_id = {oldId}", ct);
+
+            int movedGapSkills = await _unitOfWork.ExecuteSqlAsync(
+                $"UPDATE gap_analysis_skills SET skill_id = {newId} WHERE skill_id = {oldId}", ct);
+
+            int movedRoadmapNodes = await _unitOfWork.ExecuteSqlAsync(
+                $"UPDATE roadmap_nodes SET skill_id = {newId} WHERE skill_id = {oldId}", ct);
+
+            // 2. Move skill_resources, skipping rows that already exist on the target skill.
+            int movedResources = await _unitOfWork.ExecuteSqlInterpolatedAsync($@"
+                INSERT INTO skill_resources (id, skill_id, resource_id, is_primary, display_order, priority_score, created_at, updated_at)
+                SELECT gen_random_uuid(), {newId}, resource_id, is_primary, display_order, priority_score, created_at, updated_at
+                FROM skill_resources WHERE skill_id = {oldId}
+                ON CONFLICT (skill_id, resource_id) DO NOTHING", ct);
+
+            await _unitOfWork.ExecuteSqlAsync(
+                $"DELETE FROM skill_resources WHERE skill_id = {oldId}", ct);
+
+            // 3. Move prerequisites (both directions), guard against self-loops after merge.
+            int movedPrereqsForward = await _unitOfWork.ExecuteSqlInterpolatedAsync($@"
+                INSERT INTO skill_prerequisites (skill_id, prerequisite_id)
+                SELECT {newId}, prerequisite_id FROM skill_prerequisites
+                  WHERE skill_id = {oldId} AND prerequisite_id <> {newId}
+                ON CONFLICT (skill_id, prerequisite_id) DO NOTHING", ct);
+
+            int movedPrereqsReverse = await _unitOfWork.ExecuteSqlInterpolatedAsync($@"
+                INSERT INTO skill_prerequisites (skill_id, prerequisite_id)
+                SELECT skill_id, {newId} FROM skill_prerequisites
+                  WHERE prerequisite_id = {oldId} AND skill_id <> {newId}
+                ON CONFLICT (skill_id, prerequisite_id) DO NOTHING", ct);
+
+            await _unitOfWork.ExecuteSqlAsync(
+                $"DELETE FROM skill_prerequisites WHERE skill_id = {oldId} OR prerequisite_id = {oldId}", ct);
+
+            // 4. Audit log — admin-supplied reason is parameterized, not interpolated as SQL.
+            await _unitOfWork.ExecuteSqlInterpolatedAsync($@"
+                INSERT INTO admin_actions (id, admin_user_id, action_type, target_id, target_type, metadata, created_at)
+                VALUES (gen_random_uuid(), {adminId}, 'merge_skill', {oldId}, 'skill',
+                        jsonb_build_object('mergedInto', {newId}::text, 'reason', {reason}), NOW())", ct);
+
+            // 5. Finally remove the duplicate skill row.
+            await _unitOfWork.ExecuteSqlAsync(
+                $"DELETE FROM skills WHERE id = {oldId}", ct);
+
+            return new MergeSkillResponse
+            {
+                OldSkillId = oldId,
+                NewSkillId = newId,
+                MovedRoadmapNodes = movedRoadmapNodes,
+                MovedJdSkills = movedJdSkills,
+                MovedGapSkills = movedGapSkills,
+                MovedResources = movedResources,
+                MovedPrerequisites = movedPrereqsForward + movedPrereqsReverse
+            };
+        }, cancellationToken);
     }
 }

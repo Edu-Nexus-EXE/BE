@@ -71,6 +71,28 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         return await Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRawAsync(_context.Database, sql, parameters);
     }
 
+    public async Task<int> ExecuteSqlInterpolatedAsync(FormattableString sql, CancellationToken cancellationToken = default)
+    {
+        return await Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions
+            .ExecuteSqlInterpolatedAsync(_context.Database, sql, cancellationToken);
+    }
+
+    public async Task<T> ExecuteInTransactionAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken = default)
+    {
+        await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var result = await action(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            return result;
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
     public void Dispose()
     {
         _context.Dispose();
