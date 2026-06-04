@@ -84,7 +84,10 @@ public static class DependencyInjection
         
         services.AddScoped<IRoadmapGenerateQueue, RoadmapGenerateQueue>();
         services.AddScoped<RoadmapGenerateJob>();
-        
+
+        services.AddScoped<IRagIngestionQueue, HangfireRagIngestionQueue>();
+        services.AddScoped<RagIngestionJob>();
+
         return services;
     }
 

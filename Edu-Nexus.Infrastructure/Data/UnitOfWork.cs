@@ -38,6 +38,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         PaymentOrders = new Repository<PaymentOrder>(_context);
         RagQueryLogs = new Repository<RagQueryLog>(_context);
         AffiliateClicks = new Repository<AffiliateClick>(_context);
+        RagDocuments = new Repository<RagDocument>(_context);
+        RagChunks = new Repository<RagChunk>(_context);
     }
 
     public IRepository<User> Users { get; private set; }
@@ -68,6 +70,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IRepository<PaymentOrder> PaymentOrders { get; private set; }
     public IRepository<RagQueryLog> RagQueryLogs { get; private set; }
     public IRepository<AffiliateClick> AffiliateClicks { get; private set; }
+    public IRepository<RagDocument> RagDocuments { get; private set; }
+    public IRepository<RagChunk> RagChunks { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
