@@ -26,7 +26,9 @@ public class PortfolioResponseData
 public class CompletedSkillDto
 {
     public Guid SkillId { get; set; }
-    public string Name { get; set; } = null!;
+    public string SkillName { get; set; } = null!;
+    public DateTime? CompletedAt { get; set; }
+    public string? FromRoadmap { get; set; }
 }
 
 public class PortfolioCertificateDto

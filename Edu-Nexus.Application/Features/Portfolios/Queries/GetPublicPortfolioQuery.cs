@@ -99,16 +99,23 @@ public class GetPublicPortfolioQueryHandler : IRequestHandler<GetPublicPortfolio
                      && n.Skill != null,
                 "Skill,Roadmap", cancellationToken);
 
-            var distinctSkills = userNodes
+            response.CompletedSkills = userNodes
                 .GroupBy(n => n.Skill!.Id)
-                .Select(g => g.First().Skill!)
+                .Select(g =>
+                {
+                    var earliest = g
+                        .OrderBy(n => n.CompletedAt ?? DateTime.MaxValue)
+                        .First();
+                    return new CompletedSkillDto
+                    {
+                        SkillId = earliest.Skill!.Id,
+                        SkillName = earliest.Skill!.Name,
+                        CompletedAt = earliest.CompletedAt,
+                        FromRoadmap = earliest.Roadmap?.Title
+                    };
+                })
+                .OrderByDescending(s => s.CompletedAt ?? DateTime.MinValue)
                 .ToList();
-
-            response.CompletedSkills = distinctSkills.Select(s => new CompletedSkillDto
-            {
-                SkillId = s.Id,
-                Name = s.Name
-            }).ToList();
         }
 
         return response;
