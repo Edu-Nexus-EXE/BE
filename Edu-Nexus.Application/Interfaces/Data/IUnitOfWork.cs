@@ -30,6 +30,8 @@ public interface IUnitOfWork
     IRepository<PortfolioProject> PortfolioProjects { get; }
     IRepository<AdminAction> AdminActions { get; }
     IRepository<PaymentOrder> PaymentOrders { get; }
+    IRepository<RagQueryLog> RagQueryLogs { get; }
+    IRepository<AffiliateClick> AffiliateClicks { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task<int> ExecuteSqlAsync(string sql, params object[] parameters);
