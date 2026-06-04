@@ -1,4 +1,5 @@
 using Edu_Nexus.Application.DTOs;
+using Edu_Nexus.Application.Helpers;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Security;
 using MediatR;
@@ -30,11 +31,21 @@ public class ApproveSkillCommandHandler : IRequestHandler<ApproveSkillCommand, A
             throw new Exception("409 NOT_PENDING_REVIEW");
         }
 
-        if (!string.IsNullOrWhiteSpace(command.Request.Name))
+        if (!string.IsNullOrWhiteSpace(command.Request.Name) && command.Request.Name != skill.Name)
         {
-            // Check slug collision if changing name implies changing slug, but request doesn't have slug. We'll just change name.
-            // Wait, if they just change Name, should we change Slug? Let's just change what's provided.
             skill.Name = command.Request.Name;
+
+            var newSlug = SlugHelper.GenerateSlug(command.Request.Name);
+            if (!string.Equals(newSlug, skill.Slug, StringComparison.Ordinal))
+            {
+                var collision = await _unitOfWork.Skills.FirstOrDefaultAsync(
+                    s => s.Slug == newSlug && s.Id != skill.Id, "", cancellationToken);
+                if (collision != null)
+                {
+                    throw new Exception("409 SLUG_TAKEN");
+                }
+                skill.Slug = newSlug;
+            }
         }
 
         if (command.Request.Category != null) skill.Category = command.Request.Category;

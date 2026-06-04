@@ -131,6 +131,10 @@ public class AdminSkillsController : ControllerBase
         {
             return Conflict(new { error = new { code = "NOT_PENDING_REVIEW", message = "Skill này không nằm trong hàng đợi duyệt." } });
         }
+        catch (Exception ex) when (ex.Message == "409 SLUG_TAKEN")
+        {
+            return Conflict(new { error = new { code = "SLUG_TAKEN", message = "Slug được sinh từ tên mới đã tồn tại." } });
+        }
     }
 
     [HttpPost("{oldId:guid}/merge-to/{newId:guid}")]
