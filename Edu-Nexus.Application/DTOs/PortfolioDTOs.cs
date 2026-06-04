@@ -7,6 +7,7 @@ public class PortfolioResponseData
 {
     public Guid UserId { get; set; }
     public string? Slug { get; set; }
+    public string? PortfolioUrl { get; set; }
     public string? FullName { get; set; }
     public string? AvatarUrl { get; set; }
     public string? Headline { get; set; }
@@ -26,7 +27,9 @@ public class PortfolioResponseData
 public class CompletedSkillDto
 {
     public Guid SkillId { get; set; }
-    public string Name { get; set; } = null!;
+    public string SkillName { get; set; } = null!;
+    public DateTime? CompletedAt { get; set; }
+    public string? FromRoadmap { get; set; }
 }
 
 public class PortfolioCertificateDto

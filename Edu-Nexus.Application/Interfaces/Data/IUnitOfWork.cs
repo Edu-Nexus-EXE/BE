@@ -28,6 +28,15 @@ public interface IUnitOfWork
     IRepository<Portfolio> Portfolios { get; }
     IRepository<PortfolioCertificate> PortfolioCertificates { get; }
     IRepository<PortfolioProject> PortfolioProjects { get; }
+    IRepository<AdminAction> AdminActions { get; }
+    IRepository<PaymentOrder> PaymentOrders { get; }
+    IRepository<RagQueryLog> RagQueryLogs { get; }
+    IRepository<AffiliateClick> AffiliateClicks { get; }
+    IRepository<RagDocument> RagDocuments { get; }
+    IRepository<RagChunk> RagChunks { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task<int> ExecuteSqlAsync(string sql, params object[] parameters);
+    Task<int> ExecuteSqlInterpolatedAsync(FormattableString sql, CancellationToken cancellationToken = default);
+    Task<T> ExecuteInTransactionAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken = default);
 }

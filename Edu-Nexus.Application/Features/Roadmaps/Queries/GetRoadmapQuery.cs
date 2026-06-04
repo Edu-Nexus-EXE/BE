@@ -29,7 +29,7 @@ public class GetRoadmapQueryHandler : IRequestHandler<GetRoadmapQuery, RoadmapDe
         // Given standard IUnitOfWork, we use includeProperties.
         var roadmap = await _unitOfWork.Roadmaps.FirstOrDefaultAsync(
             r => r.Id == request.Id && r.UserId == userId,
-            "RoadmapNodes,RoadmapNodes.Skill", cancellationToken)
+            "RoadmapNodes,RoadmapNodes.Skill,RoadmapNodes.PrerequisiteNodes", cancellationToken)
             ?? throw new Exception("404 ROADMAP_NOT_FOUND");
 
         // Fetch related skill resources and learning resources if NOT archived
@@ -87,7 +87,7 @@ public class GetRoadmapQueryHandler : IRequestHandler<GetRoadmapQuery, RoadmapDe
                     node.IsPrerequisite,
                     node.Status.ToString().ToLowerInvariant(),
                     node.CompletedAt,
-                    new List<Guid>(), // prerequisiteNodeIds can be populated later
+                    node.PrerequisiteNodes.Select(p => p.Id).ToList(),
                     resourcesDto
                 ));
             }
@@ -107,7 +107,7 @@ public class GetRoadmapQueryHandler : IRequestHandler<GetRoadmapQuery, RoadmapDe
                     node.IsPrerequisite,
                     node.Status.ToString().ToLowerInvariant(),
                     node.CompletedAt,
-                    new List<Guid>(),
+                    node.PrerequisiteNodes.Select(p => p.Id).ToList(),
                     new List<LearningResourceDto>() // Empty for archived
                 ));
             }

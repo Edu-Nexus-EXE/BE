@@ -1,12 +1,16 @@
+using Edu_Nexus.Application.Interfaces.Admin;
 using Edu_Nexus.Application.Interfaces.BackgroundJobs;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Parsing;
+using Edu_Nexus.Application.Interfaces.Portfolios;
 using Edu_Nexus.Application.Interfaces.Security;
 using Edu_Nexus.Application.Interfaces.Storage;
+using Edu_Nexus.Infrastructure.Admin;
 using Edu_Nexus.Infrastructure.BackgroundJobs;
 using Edu_Nexus.Infrastructure.Data;
 using Edu_Nexus.Infrastructure.Jobs;
 using Edu_Nexus.Infrastructure.Parsing;
+using Edu_Nexus.Infrastructure.Portfolios;
 using Edu_Nexus.Infrastructure.Security;
 using Edu_Nexus.Infrastructure.Storage;
 using Hangfire;
@@ -48,6 +52,8 @@ public static class DependencyInjection
         services.AddSingleton<IGoogleAuthService, GoogleAuthService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddSingleton<IPortfolioUrlBuilder, PortfolioUrlBuilder>();
+        services.AddScoped<IAdminAuditLogger, AdminAuditLogger>();
         return services;
     }
 
@@ -78,7 +84,10 @@ public static class DependencyInjection
         
         services.AddScoped<IRoadmapGenerateQueue, RoadmapGenerateQueue>();
         services.AddScoped<RoadmapGenerateJob>();
-        
+
+        services.AddScoped<IRagIngestionQueue, HangfireRagIngestionQueue>();
+        services.AddScoped<RagIngestionJob>();
+
         return services;
     }
 
@@ -88,6 +97,7 @@ public static class DependencyInjection
         services.AddSingleton<IPdfTextExtractor, PdfPigTextExtractor>();
         services.AddSingleton<IAnonymizer, RegexAnonymizer>();
         services.AddSingleton<IFileStorage, LocalFileStorage>();
+        services.AddHttpClient<IJdUrlFetcherService, JdUrlFetcherService>();
 
         // Always register both fake and AI parsers; the binding for the I* interface
         // is decided by the "Ai:Enabled" flag (or per-pipeline overrides) below.

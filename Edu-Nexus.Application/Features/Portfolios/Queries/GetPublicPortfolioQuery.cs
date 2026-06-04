@@ -1,5 +1,6 @@
 using Edu_Nexus.Application.DTOs;
 using Edu_Nexus.Application.Interfaces.Data;
+using Edu_Nexus.Application.Interfaces.Portfolios;
 using Edu_Nexus.Domain.Entities;
 using Edu_Nexus.Domain.Enums.RoadmapNodes;
 using MediatR;
@@ -12,10 +13,12 @@ public record GetPublicPortfolioQuery(string Slug) : IRequest<PortfolioResponseD
 public class GetPublicPortfolioQueryHandler : IRequestHandler<GetPublicPortfolioQuery, PortfolioResponseData>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPortfolioUrlBuilder _urlBuilder;
 
-    public GetPublicPortfolioQueryHandler(IUnitOfWork unitOfWork)
+    public GetPublicPortfolioQueryHandler(IUnitOfWork unitOfWork, IPortfolioUrlBuilder urlBuilder)
     {
         _unitOfWork = unitOfWork;
+        _urlBuilder = urlBuilder;
     }
 
     public async Task<PortfolioResponseData> Handle(GetPublicPortfolioQuery request, CancellationToken cancellationToken)
@@ -25,7 +28,11 @@ public class GetPublicPortfolioQueryHandler : IRequestHandler<GetPublicPortfolio
             throw new Exception("404 NOT_FOUND");
         }
 
-        var user = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.PortfolioUrlSlug == request.Slug, "", cancellationToken)
+        var user = await _unitOfWork.Users.FirstOrDefaultAsync(
+            u => u.PortfolioUrlSlug == request.Slug
+                 && u.DeletedAt == null
+                 && !u.IsBanned,
+            "", cancellationToken)
             ?? throw new Exception("404 NOT_FOUND");
 
         var portfolio = await _unitOfWork.Portfolios.FirstOrDefaultAsync(p => p.UserId == user.Id, "", cancellationToken)
@@ -43,6 +50,7 @@ public class GetPublicPortfolioQueryHandler : IRequestHandler<GetPublicPortfolio
         {
             UserId = user.Id,
             Slug = user.PortfolioUrlSlug,
+            PortfolioUrl = _urlBuilder.Build(user.PortfolioUrlSlug),
             FullName = user.FullName,
             AvatarUrl = user.AvatarUrl,
             Headline = portfolio.Headline,
@@ -93,21 +101,29 @@ public class GetPublicPortfolioQueryHandler : IRequestHandler<GetPublicPortfolio
 
         if (portfolio.ShowCompletedSkills)
         {
-            var nodes = await _unitOfWork.RoadmapNodes.FindAsync(n => n.Status == RoadmapNodeStatus.Completed, "Skill,Roadmap", cancellationToken);
-            var userNodes = nodes.Where(n => n.Roadmap != null && n.Roadmap.UserId == user.Id).ToList();
-            
-            var distinctSkills = userNodes
-                .Where(n => n.Skill != null)
-                .Select(n => n.Skill)
-                .GroupBy(s => s.Id)
-                .Select(g => g.First())
-                .ToList();
+            var userNodes = await _unitOfWork.RoadmapNodes.FindAsync(
+                n => n.Status == RoadmapNodeStatus.Completed
+                     && n.Roadmap.UserId == user.Id
+                     && n.Skill != null,
+                "Skill,Roadmap", cancellationToken);
 
-            response.CompletedSkills = distinctSkills.Select(s => new CompletedSkillDto
-            {
-                SkillId = s.Id,
-                Name = s.Name
-            }).ToList();
+            response.CompletedSkills = userNodes
+                .GroupBy(n => n.Skill!.Id)
+                .Select(g =>
+                {
+                    var earliest = g
+                        .OrderBy(n => n.CompletedAt ?? DateTime.MaxValue)
+                        .First();
+                    return new CompletedSkillDto
+                    {
+                        SkillId = earliest.Skill!.Id,
+                        SkillName = earliest.Skill!.Name,
+                        CompletedAt = earliest.CompletedAt,
+                        FromRoadmap = earliest.Roadmap?.Title
+                    };
+                })
+                .OrderByDescending(s => s.CompletedAt ?? DateTime.MinValue)
+                .ToList();
         }
 
         return response;

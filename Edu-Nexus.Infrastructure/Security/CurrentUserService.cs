@@ -1,5 +1,6 @@
 using Edu_Nexus.Application.Interfaces.Security;
 using Microsoft.AspNetCore.Http;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace Edu_Nexus.Infrastructure.Security;
@@ -17,10 +18,20 @@ public class CurrentUserService : ICurrentUserService
     {
         get
         {
-            var userIdStr = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = _httpContextAccessor.HttpContext?.User;
+            var userIdStr = user?.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                            ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
             return Guid.TryParse(userIdStr, out var userId) ? userId : null;
         }
     }
 
-    public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
+    public string? Email
+    {
+        get
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            return user?.FindFirstValue(JwtRegisteredClaimNames.Email)
+                   ?? user?.FindFirstValue(ClaimTypes.Email);
+        }
+    }
 }
