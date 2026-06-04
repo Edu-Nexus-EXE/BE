@@ -1,5 +1,6 @@
 using Edu_Nexus.Application.DTOs;
 using Edu_Nexus.Application.Interfaces.Data;
+using Edu_Nexus.Application.Interfaces.Portfolios;
 using Edu_Nexus.Application.Interfaces.Security;
 using Edu_Nexus.Domain.Entities;
 using Edu_Nexus.Domain.Enums.RoadmapNodes;
@@ -14,11 +15,13 @@ public class GetMyPortfolioQueryHandler : IRequestHandler<GetMyPortfolioQuery, P
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IPortfolioUrlBuilder _urlBuilder;
 
-    public GetMyPortfolioQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public GetMyPortfolioQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IPortfolioUrlBuilder urlBuilder)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _urlBuilder = urlBuilder;
     }
 
     public async Task<PortfolioResponseData> Handle(GetMyPortfolioQuery request, CancellationToken cancellationToken)
@@ -54,6 +57,7 @@ public class GetMyPortfolioQueryHandler : IRequestHandler<GetMyPortfolioQuery, P
         {
             UserId = userId,
             Slug = user.PortfolioUrlSlug,
+            PortfolioUrl = _urlBuilder.Build(user.PortfolioUrlSlug),
             FullName = user.FullName,
             AvatarUrl = user.AvatarUrl,
             Headline = portfolio.Headline,

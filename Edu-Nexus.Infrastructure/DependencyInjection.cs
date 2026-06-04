@@ -1,12 +1,14 @@
 using Edu_Nexus.Application.Interfaces.BackgroundJobs;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Parsing;
+using Edu_Nexus.Application.Interfaces.Portfolios;
 using Edu_Nexus.Application.Interfaces.Security;
 using Edu_Nexus.Application.Interfaces.Storage;
 using Edu_Nexus.Infrastructure.BackgroundJobs;
 using Edu_Nexus.Infrastructure.Data;
 using Edu_Nexus.Infrastructure.Jobs;
 using Edu_Nexus.Infrastructure.Parsing;
+using Edu_Nexus.Infrastructure.Portfolios;
 using Edu_Nexus.Infrastructure.Security;
 using Edu_Nexus.Infrastructure.Storage;
 using Hangfire;
@@ -48,6 +50,7 @@ public static class DependencyInjection
         services.AddSingleton<IGoogleAuthService, GoogleAuthService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddSingleton<IPortfolioUrlBuilder, PortfolioUrlBuilder>();
         return services;
     }
 

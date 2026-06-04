@@ -1,5 +1,6 @@
 using Edu_Nexus.Application.DTOs;
 using Edu_Nexus.Application.Interfaces.Data;
+using Edu_Nexus.Application.Interfaces.Portfolios;
 using Edu_Nexus.Domain.Entities;
 using Edu_Nexus.Domain.Enums.RoadmapNodes;
 using MediatR;
@@ -12,10 +13,12 @@ public record GetPublicPortfolioQuery(string Slug) : IRequest<PortfolioResponseD
 public class GetPublicPortfolioQueryHandler : IRequestHandler<GetPublicPortfolioQuery, PortfolioResponseData>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPortfolioUrlBuilder _urlBuilder;
 
-    public GetPublicPortfolioQueryHandler(IUnitOfWork unitOfWork)
+    public GetPublicPortfolioQueryHandler(IUnitOfWork unitOfWork, IPortfolioUrlBuilder urlBuilder)
     {
         _unitOfWork = unitOfWork;
+        _urlBuilder = urlBuilder;
     }
 
     public async Task<PortfolioResponseData> Handle(GetPublicPortfolioQuery request, CancellationToken cancellationToken)
@@ -43,6 +46,7 @@ public class GetPublicPortfolioQueryHandler : IRequestHandler<GetPublicPortfolio
         {
             UserId = user.Id,
             Slug = user.PortfolioUrlSlug,
+            PortfolioUrl = _urlBuilder.Build(user.PortfolioUrlSlug),
             FullName = user.FullName,
             AvatarUrl = user.AvatarUrl,
             Headline = portfolio.Headline,

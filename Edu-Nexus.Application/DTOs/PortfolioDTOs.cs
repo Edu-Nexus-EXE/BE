@@ -7,6 +7,7 @@ public class PortfolioResponseData
 {
     public Guid UserId { get; set; }
     public string? Slug { get; set; }
+    public string? PortfolioUrl { get; set; }
     public string? FullName { get; set; }
     public string? AvatarUrl { get; set; }
     public string? Headline { get; set; }
