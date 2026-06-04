@@ -23,14 +23,14 @@ public class AdminSkillsController : ControllerBase
     public async Task<IActionResult> GetSkills([FromQuery] string? search, [FromQuery] string? major, [FromQuery] string? category, [FromQuery] bool? isActive, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var result = await _mediator.Send(new GetSkillsQuery(search, major, category, isActive, page, pageSize));
-        return Ok(result);
+        return Ok(new { data = result });
     }
 
     [HttpGet("pending-review")]
     public async Task<IActionResult> GetPendingReviewSkills([FromQuery] string? search, [FromQuery] string? major, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var result = await _mediator.Send(new GetPendingReviewSkillsQuery(search, major, page, pageSize));
-        return Ok(result);
+        return Ok(new { data = result });
     }
 
     [HttpPost]
