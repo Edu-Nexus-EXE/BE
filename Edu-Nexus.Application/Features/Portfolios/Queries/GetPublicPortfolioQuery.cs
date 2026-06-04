@@ -93,14 +93,15 @@ public class GetPublicPortfolioQueryHandler : IRequestHandler<GetPublicPortfolio
 
         if (portfolio.ShowCompletedSkills)
         {
-            var nodes = await _unitOfWork.RoadmapNodes.FindAsync(n => n.Status == RoadmapNodeStatus.Completed, "Skill,Roadmap", cancellationToken);
-            var userNodes = nodes.Where(n => n.Roadmap != null && n.Roadmap.UserId == user.Id).ToList();
-            
+            var userNodes = await _unitOfWork.RoadmapNodes.FindAsync(
+                n => n.Status == RoadmapNodeStatus.Completed
+                     && n.Roadmap.UserId == user.Id
+                     && n.Skill != null,
+                "Skill,Roadmap", cancellationToken);
+
             var distinctSkills = userNodes
-                .Where(n => n.Skill != null)
-                .Select(n => n.Skill)
-                .GroupBy(s => s.Id)
-                .Select(g => g.First())
+                .GroupBy(n => n.Skill!.Id)
+                .Select(g => g.First().Skill!)
                 .ToList();
 
             response.CompletedSkills = distinctSkills.Select(s => new CompletedSkillDto
