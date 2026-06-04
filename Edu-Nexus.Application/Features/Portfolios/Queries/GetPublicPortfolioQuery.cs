@@ -28,7 +28,11 @@ public class GetPublicPortfolioQueryHandler : IRequestHandler<GetPublicPortfolio
             throw new Exception("404 NOT_FOUND");
         }
 
-        var user = await _unitOfWork.Users.FirstOrDefaultAsync(u => u.PortfolioUrlSlug == request.Slug, "", cancellationToken)
+        var user = await _unitOfWork.Users.FirstOrDefaultAsync(
+            u => u.PortfolioUrlSlug == request.Slug
+                 && u.DeletedAt == null
+                 && !u.IsBanned,
+            "", cancellationToken)
             ?? throw new Exception("404 NOT_FOUND");
 
         var portfolio = await _unitOfWork.Portfolios.FirstOrDefaultAsync(p => p.UserId == user.Id, "", cancellationToken)
