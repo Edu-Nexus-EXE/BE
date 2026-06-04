@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Edu_Nexus.APIs.Controllers;
 
 [ApiController]
-[Route("api/v1/admin/skills")]
+[Route("admin/skills")]
 [Authorize(Roles = "Admin,admin")]
 public class AdminSkillsController : ControllerBase
 {
