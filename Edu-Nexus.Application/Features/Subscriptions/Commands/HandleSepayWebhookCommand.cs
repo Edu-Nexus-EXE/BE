@@ -30,9 +30,10 @@ public class HandleSepayWebhookCommandHandler : IRequestHandler<HandleSepayWebho
     public async Task<bool> Handle(HandleSepayWebhookCommand request, CancellationToken cancellationToken)
     {
         // 1. Xác thực API Key
-        var expectedKey = _sePaySettings.ApiKey;
+        var expectedKey = NormalizeApiKey(_sePaySettings.ApiKey);
+        var clientKey = NormalizeApiKey(request.AuthorizationHeader);
         if (string.IsNullOrWhiteSpace(expectedKey) ||
-            !string.Equals(request.AuthorizationHeader, expectedKey, StringComparison.Ordinal))
+            !string.Equals(clientKey, expectedKey, StringComparison.Ordinal))
         {
             _logger.LogWarning("SePay webhook: unauthorized - invalid API key");
             throw new Exception("401 UNAUTHORIZED");
@@ -138,5 +139,20 @@ public class HandleSepayWebhookCommandHandler : IRequestHandler<HandleSepayWebho
             matchedOrder.Id, matchedOrder.UserId);
 
         return true;
+    }
+
+    private static string NormalizeApiKey(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return "";
+        key = key.Trim();
+        if (key.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            key = key[7..].Trim();
+        }
+        else if (key.StartsWith("Apikey ", StringComparison.OrdinalIgnoreCase))
+        {
+            key = key[7..].Trim();
+        }
+        return key;
     }
 }

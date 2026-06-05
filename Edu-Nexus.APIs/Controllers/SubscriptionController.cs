@@ -75,16 +75,6 @@ public class SubscriptionController : ControllerBase
         try
         {
             string authHeader = Request.Headers["Authorization"].ToString().Trim();
-            // Trích xuất api key (loại bỏ prefix "Bearer " hoặc "Apikey " nếu có)
-            if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-            {
-                authHeader = authHeader[7..].Trim();
-            }
-            else if (authHeader.StartsWith("Apikey ", StringComparison.OrdinalIgnoreCase))
-            {
-                authHeader = authHeader[7..].Trim();
-            }
-
             var result = await _mediator.Send(new HandleSepayWebhookCommand(payload, authHeader), ct);
             return Ok(new { success = result });
         }
