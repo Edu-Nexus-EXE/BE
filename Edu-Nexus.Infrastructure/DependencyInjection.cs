@@ -1,5 +1,6 @@
 using Edu_Nexus.Application.Interfaces.Admin;
 using Edu_Nexus.Application.Interfaces.BackgroundJobs;
+using Edu_Nexus.Application.Interfaces.Configuration;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Parsing;
 using Edu_Nexus.Application.Interfaces.Portfolios;
@@ -7,6 +8,7 @@ using Edu_Nexus.Application.Interfaces.Security;
 using Edu_Nexus.Application.Interfaces.Storage;
 using Edu_Nexus.Infrastructure.Admin;
 using Edu_Nexus.Infrastructure.BackgroundJobs;
+using Edu_Nexus.Infrastructure.Configuration;
 using Edu_Nexus.Infrastructure.Data;
 using Edu_Nexus.Infrastructure.Jobs;
 using Edu_Nexus.Infrastructure.Parsing;
@@ -29,6 +31,7 @@ public static class DependencyInjection
         services.AddSecurity();
         services.AddBackgroundJobs(configuration);
         services.AddParsing(configuration);
+        services.AddSingleton<ISePaySettings>(sp => new SePaySettings(configuration));
         return services;
     }
 
