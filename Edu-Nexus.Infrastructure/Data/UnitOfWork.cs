@@ -40,6 +40,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         AffiliateClicks = new Repository<AffiliateClick>(_context);
         RagDocuments = new Repository<RagDocument>(_context);
         RagChunks = new Repository<RagChunk>(_context);
+        SubscriptionRenewalNotifications = new Repository<SubscriptionRenewalNotification>(_context);
     }
 
     public IRepository<User> Users { get; private set; }
@@ -72,6 +73,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IRepository<AffiliateClick> AffiliateClicks { get; private set; }
     public IRepository<RagDocument> RagDocuments { get; private set; }
     public IRepository<RagChunk> RagChunks { get; private set; }
+    public IRepository<SubscriptionRenewalNotification> SubscriptionRenewalNotifications { get; private set; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

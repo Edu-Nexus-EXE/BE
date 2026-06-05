@@ -4,5 +4,6 @@ public enum PaymentProvider
 {
     ManualTransfer,
     Vnpay,
-    Momo
+    Momo,
+    SePay
 }
