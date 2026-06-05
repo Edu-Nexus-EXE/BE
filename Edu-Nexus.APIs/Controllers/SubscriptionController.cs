@@ -66,5 +66,36 @@ public class SubscriptionController : ControllerBase
             return UnprocessableEntity(new { error = new { code = ex.Message[4..] } });
         }
     }
+
+    /// <summary>POST /subscription/webhook — Webhook nhận callback thanh toán từ SePay (FR8.4)</summary>
+    [HttpPost("webhook")]
+    [AllowAnonymous]
+    public async Task<IActionResult> HandleWebhook([FromBody] SepayWebhookPayload payload, CancellationToken ct)
+    {
+        try
+        {
+            string authHeader = Request.Headers["Authorization"].ToString().Trim();
+            // Trích xuất api key (loại bỏ prefix "Bearer " hoặc "Apikey " nếu có)
+            if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                authHeader = authHeader[7..].Trim();
+            }
+            else if (authHeader.StartsWith("Apikey ", StringComparison.OrdinalIgnoreCase))
+            {
+                authHeader = authHeader[7..].Trim();
+            }
+
+            var result = await _mediator.Send(new HandleSepayWebhookCommand(payload, authHeader), ct);
+            return Ok(new { success = result });
+        }
+        catch (Exception ex) when (ex.Message.StartsWith("401"))
+        {
+            return Unauthorized(new { error = new { code = "UNAUTHORIZED" } });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = new { message = ex.Message } });
+        }
+    }
 }
 
