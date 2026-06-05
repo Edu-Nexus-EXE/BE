@@ -93,16 +93,27 @@ public class HandleSepayWebhookCommandHandler : IRequestHandler<HandleSepayWebho
 
         // 7. Kích hoạt / gia hạn UserSubscription
         var existing = await _unitOfWork.UserSubscriptions.FirstOrDefaultAsync(
-            s => s.UserId == matchedOrder.UserId && s.Status == UserSubscriptionStatus.Active,
+            s => s.UserId == matchedOrder.UserId,
             "", cancellationToken);
 
+        var now = DateTime.UtcNow;
         if (existing != null)
         {
-            var expiry = existing.ExpiresAt ?? DateTime.UtcNow;
+            var wasActive = existing.Status == UserSubscriptionStatus.Active;
+            var baseDate = (wasActive && existing.ExpiresAt > now)
+                ? existing.ExpiresAt.Value
+                : now;
+
             existing.TierId = matchedOrder.TierId;
-            existing.ExpiresAt = expiry.AddMonths(matchedOrder.DurationMonths);
-            existing.UpdatedAt = DateTime.UtcNow;
+            existing.ExpiresAt = baseDate.AddMonths(matchedOrder.DurationMonths);
+            existing.UpdatedAt = now;
             existing.Status = UserSubscriptionStatus.Active;
+            existing.CancelledAt = null;
+            if (!wasActive)
+            {
+                existing.StartedAt = now;
+            }
+
             matchedOrder.SubscriptionId = existing.Id;
             _unitOfWork.UserSubscriptions.Update(existing);
         }
@@ -113,8 +124,8 @@ public class HandleSepayWebhookCommandHandler : IRequestHandler<HandleSepayWebho
                 UserId = matchedOrder.UserId,
                 TierId = matchedOrder.TierId,
                 Status = UserSubscriptionStatus.Active,
-                StartedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMonths(matchedOrder.DurationMonths),
+                StartedAt = now,
+                ExpiresAt = now.AddMonths(matchedOrder.DurationMonths),
                 AutoRenew = false,
             };
             _unitOfWork.UserSubscriptions.Add(newSub);
