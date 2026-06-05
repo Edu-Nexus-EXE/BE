@@ -24,4 +24,21 @@ public class SubscriptionController : ControllerBase
         var result = await _mediator.Send(new GetSubscriptionTiersQuery(), ct);
         return Ok(new { data = result });
     }
+
+    /// <summary>GET /subscription/me — Subscription + quota usage hiện tại (FR8.2)</summary>
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> GetMySubscription(CancellationToken ct)
+    {
+        try
+        {
+            var result = await _mediator.Send(new GetMySubscriptionQuery(), ct);
+            return Ok(new { data = result });
+        }
+        catch (Exception ex) when (ex.Message.StartsWith("401"))
+        {
+            return Unauthorized(new { error = new { code = "UNAUTHORIZED" } });
+        }
+    }
 }
+
