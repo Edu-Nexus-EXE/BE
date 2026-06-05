@@ -91,6 +91,9 @@ public static class DependencyInjection
         services.AddScoped<IRagIngestionQueue, HangfireRagIngestionQueue>();
         services.AddScoped<RagIngestionJob>();
 
+        services.AddScoped<SubscriptionExpirationJob>();
+        services.AddScoped<RenewalNotificationJob>();
+
         return services;
     }
 

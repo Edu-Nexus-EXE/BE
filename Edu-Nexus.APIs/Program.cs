@@ -49,6 +49,22 @@ if (app.Environment.IsDevelopment())
     app.UseHangfireDashboard("/hangfire");
 }
 
+// Register Hangfire Recurring Jobs for subscription expiration and notifications
+using (var scope = app.Services.CreateScope())
+{
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+    
+    recurringJobManager.AddOrUpdate<Edu_Nexus.Infrastructure.Jobs.SubscriptionExpirationJob>(
+        "subscription-expiration-job",
+        job => job.RunAsync(CancellationToken.None),
+        Cron.Daily);
+
+    recurringJobManager.AddOrUpdate<Edu_Nexus.Infrastructure.Jobs.RenewalNotificationJob>(
+        "subscription-renewal-notification-job",
+        job => job.RunAsync(CancellationToken.None),
+        Cron.Daily);
+}
+
 app.MapControllers();
 
 app.Run();

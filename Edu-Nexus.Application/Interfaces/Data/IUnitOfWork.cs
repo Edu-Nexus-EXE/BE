@@ -34,6 +34,7 @@ public interface IUnitOfWork
     IRepository<AffiliateClick> AffiliateClicks { get; }
     IRepository<RagDocument> RagDocuments { get; }
     IRepository<RagChunk> RagChunks { get; }
+    IRepository<SubscriptionRenewalNotification> SubscriptionRenewalNotifications { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task<int> ExecuteSqlAsync(string sql, params object[] parameters);
