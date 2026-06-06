@@ -40,17 +40,30 @@ public class HandleSepayWebhookCommandHandler : IRequestHandler<HandleSepayWebho
         }
 
         var payload = request.Payload;
+        var sepayTransactionId = payload.Id.ToString();
+
         _logger.LogInformation("SePay webhook: id={Id}, content={Content}, amount={Amount}",
             payload.Id, payload.Content, payload.TransferAmount);
 
         // 2. Chỉ xử lý tiền vào
         if (payload.TransferAmount <= 0)
         {
-            _logger.LogInformation("SePay webhook: skipping outgoing transaction");
+            _logger.LogInformation("SePay webhook: skipping outgoing transaction id={Id}", payload.Id);
             return true;
         }
 
-        // 3. Tìm PaymentOrder theo nội dung CK (EDUNEXUS XXXXXXXX)
+        // 3. Dedup theo SePay transaction id — tránh complete 2 lần nếu SePay retry hoặc
+        //    user vô tình CK 2 giao dịch riêng biệt cùng content.
+        var alreadyProcessed = await _unitOfWork.PaymentOrders.FirstOrDefaultAsync(
+            o => o.ProviderOrderId == sepayTransactionId, "", cancellationToken);
+        if (alreadyProcessed != null)
+        {
+            _logger.LogInformation("SePay webhook: transaction {TxId} already linked to order {OrderId}, skipping",
+                sepayTransactionId, alreadyProcessed.Id);
+            return true;
+        }
+
+        // 4. Tìm PaymentOrder theo nội dung CK (EDUNEXUS XXXXXXXX)
         var content = payload.Content ?? "";
         PaymentOrder? matchedOrder = null;
 
@@ -71,25 +84,29 @@ public class HandleSepayWebhookCommandHandler : IRequestHandler<HandleSepayWebho
 
         if (matchedOrder == null)
         {
-            _logger.LogInformation("SePay webhook: no matching order for content='{Content}'", content);
-            return true; // Trả 200 tránh SePay retry
-        }
-
-        // 4. Idempotency
-        if (matchedOrder.Status == PaymentOrderStatus.Completed)
+            // Tiền đã vào TK nhưng không match được order nào → ghi WARN có đầy đủ
+            // trường để admin tra cứu/refund thủ công. Vẫn trả 200 để tránh SePay retry storm.
+            _logger.LogWarning(
+                "SePay webhook UNRECONCILED: no matching order. txId={TxId}, account={Account}, amount={Amount}, content='{Content}', date={Date}",
+                sepayTransactionId, payload.AccountNumber, payload.TransferAmount, content, payload.TransactionDate);
             return true;
+        }
 
         // 5. Kiểm tra số tiền (không cho thanh toán thiếu)
         if (payload.TransferAmount < matchedOrder.Amount)
         {
-            _logger.LogWarning("SePay webhook: underpaid order {OrderId}. Expected={E}, Got={G}",
-                matchedOrder.Id, matchedOrder.Amount, payload.TransferAmount);
+            // Trả thiếu cũng cần ghi WARN có đầy đủ thông tin để admin reconcile.
+            _logger.LogWarning(
+                "SePay webhook UNDERPAID: order={OrderId} userId={UserId} expected={Expected} got={Got} txId={TxId} content='{Content}'",
+                matchedOrder.Id, matchedOrder.UserId, matchedOrder.Amount, payload.TransferAmount,
+                sepayTransactionId, content);
             return true;
         }
 
-        // 6. Cập nhật PaymentOrder → Completed
+        // 6. Cập nhật PaymentOrder → Completed (lưu cả SePay tx id để truy vết + dedup)
         matchedOrder.Status = PaymentOrderStatus.Completed;
         matchedOrder.CompletedAt = DateTime.UtcNow;
+        matchedOrder.ProviderOrderId = sepayTransactionId;
         _unitOfWork.PaymentOrders.Update(matchedOrder);
 
         // 7. Kích hoạt / gia hạn UserSubscription
