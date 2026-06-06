@@ -63,6 +63,11 @@ using (var scope = app.Services.CreateScope())
         "subscription-renewal-notification-job",
         job => job.RunAsync(CancellationToken.None),
         Cron.Daily);
+
+    recurringJobManager.AddOrUpdate<Edu_Nexus.Infrastructure.Jobs.ExpirePendingPaymentOrdersJob>(
+        "expire-pending-payment-orders",
+        job => job.RunAsync(CancellationToken.None),
+        "*/5 * * * *");
 }
 
 app.MapControllers();

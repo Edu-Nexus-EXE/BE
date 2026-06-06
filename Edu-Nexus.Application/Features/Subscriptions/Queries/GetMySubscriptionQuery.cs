@@ -2,6 +2,7 @@ using Edu_Nexus.Application.DTOs;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Security;
 using Edu_Nexus.Domain.Enums.AssessmentPaths;
+using Edu_Nexus.Domain.Enums.GapAnalyses;
 using Edu_Nexus.Domain.Enums.Roadmaps;
 using Edu_Nexus.Domain.Enums.UserSubscriptions;
 using MediatR;
@@ -42,11 +43,15 @@ public class GetMySubscriptionQueryHandler : IRequestHandler<GetMySubscriptionQu
                 freeTier?.CareerTrackQuota ?? 1, freeTier?.PortfolioCertificateQuota ?? 3,
                 freeTier?.PortfolioProjectQuota ?? 3, cancellationToken);
 
+            // Spec FR8.2: Free tier is always treated as the active default
+            // subscription so the FE can render gating logic with a single
+            // status check (== "active"), regardless of whether a Free row
+            // is persisted in user_subscriptions.
             return new SubscriptionStatusDto(
                 new TierSummaryDto(
                     freeTier?.TierCode.ToString().ToLowerInvariant() ?? "free",
                     freeTier?.DisplayName ?? "Free"),
-                "free", null, usage);
+                "active", null, usage);
         }
 
         var tier = subscription.Tier;
@@ -73,8 +78,11 @@ public class GetMySubscriptionQueryHandler : IRequestHandler<GetMySubscriptionQu
         var jdUsed = (await _unitOfWork.JdSubmissions.FindAsync(
             j => j.UserId == userId && j.DeletedAt == null, "", ct)).Count();
 
+        // FR8.2: gap quota counts DISTINCT JDs that have a *completed* gap.
+        // Pending/processing/failed runs do not consume quota.
         var completedGaps = await _unitOfWork.GapAnalyses.FindAsync(
-            g => g.UserId == userId && g.IsLatest, "", ct);
+            g => g.UserId == userId && g.Status == GapAnalysisStatus.Completed,
+            "", ct);
         var gapUsed = completedGaps.Select(g => g.JdId).Distinct().Count();
 
         var assessmentPaths = await _unitOfWork.AssessmentPaths.FindAsync(

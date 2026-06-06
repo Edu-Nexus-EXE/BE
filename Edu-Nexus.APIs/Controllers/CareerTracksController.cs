@@ -145,9 +145,9 @@ public class CareerTracksController : ControllerBase
         {
             return NotFound(new { error = new { code = "NOT_FOUND", message = "Career Track hoặc JD không tồn tại." } });
         }
-        catch (Exception ex) when (ex.Message == "409 CONFLICT")
+        catch (Exception ex) when (ex.Message == "409 JD_ALREADY_IN_TRACK")
         {
-            return Conflict(new { error = new { code = "CONFLICT", message = "JD đã tồn tại trong Career Track." } });
+            return Conflict(new { error = new { code = "JD_ALREADY_IN_TRACK", message = "JD đã tồn tại trong Career Track." } });
         }
     }
 
