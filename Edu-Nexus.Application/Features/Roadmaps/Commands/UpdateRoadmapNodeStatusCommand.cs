@@ -26,7 +26,7 @@ public class UpdateRoadmapNodeStatusCommandHandler : IRequestHandler<UpdateRoadm
 
         if (!Enum.TryParse<RoadmapNodeStatus>(request.Status, true, out var newStatus))
         {
-            throw new Exception("400 INVALID_STATUS");
+            throw new Exception("422 INVALID_STATUS");
         }
 
         var node = await _unitOfWork.RoadmapNodes.FirstOrDefaultAsync(
