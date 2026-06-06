@@ -42,11 +42,15 @@ public class GetMySubscriptionQueryHandler : IRequestHandler<GetMySubscriptionQu
                 freeTier?.CareerTrackQuota ?? 1, freeTier?.PortfolioCertificateQuota ?? 3,
                 freeTier?.PortfolioProjectQuota ?? 3, cancellationToken);
 
+            // Spec FR8.2: Free tier is always treated as the active default
+            // subscription so the FE can render gating logic with a single
+            // status check (== "active"), regardless of whether a Free row
+            // is persisted in user_subscriptions.
             return new SubscriptionStatusDto(
                 new TierSummaryDto(
                     freeTier?.TierCode.ToString().ToLowerInvariant() ?? "free",
                     freeTier?.DisplayName ?? "Free"),
-                "free", null, usage);
+                "active", null, usage);
         }
 
         var tier = subscription.Tier;
