@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Edu_Nexus.Application.DTOs;
 using Edu_Nexus.Application.Interfaces.Configuration;
 using Edu_Nexus.Application.Interfaces.Data;
@@ -13,6 +14,10 @@ public record HandleSepayWebhookCommand(SepayWebhookPayload Payload, string Auth
 
 public class HandleSepayWebhookCommandHandler : IRequestHandler<HandleSepayWebhookCommand, bool>
 {
+    private static readonly Regex CodeRegex = new(
+        @"EDUNEXUS\s+([0-9A-F]{8})\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly ISePaySettings _sePaySettings;
     private readonly ILogger<HandleSepayWebhookCommandHandler> _logger;
@@ -64,8 +69,28 @@ public class HandleSepayWebhookCommandHandler : IRequestHandler<HandleSepayWebho
         }
 
         // 4. Tìm PaymentOrder theo nội dung CK (EDUNEXUS XXXXXXXX)
+        //    Trích shortCode bằng regex thay vì Contains() để:
+        //    - Loại noise content (user gõ thêm chữ) không khớp nhầm.
+        //    - Match theo equality 8 ký tự HEX, tránh trường hợp content
+        //      chứa shortCode của order khác làm prefix/substring.
+        //    - Xử lý được trường hợp user paste nhiều mã: ưu tiên mã đầu
+        //      tiên match một pending order của hệ thống.
         var content = payload.Content ?? "";
         PaymentOrder? matchedOrder = null;
+
+        var codeMatches = CodeRegex.Matches(content);
+        if (codeMatches.Count == 0)
+        {
+            _logger.LogWarning(
+                "SePay webhook UNRECONCILED: content has no EDUNEXUS code. txId={TxId}, account={Account}, amount={Amount}, content='{Content}'",
+                sepayTransactionId, payload.AccountNumber, payload.TransferAmount, content);
+            return true;
+        }
+
+        var candidateCodes = codeMatches
+            .Select(m => m.Groups[1].Value.ToUpperInvariant())
+            .Distinct()
+            .ToHashSet();
 
         var pendingOrders = await _unitOfWork.PaymentOrders.FindAsync(
             o => o.Status == PaymentOrderStatus.Pending &&
@@ -74,12 +99,19 @@ public class HandleSepayWebhookCommandHandler : IRequestHandler<HandleSepayWebho
 
         foreach (var order in pendingOrders)
         {
-            var shortCode = order.Id.ToString("N")[..8].ToUpper();
-            if (content.Contains($"EDUNEXUS {shortCode}", StringComparison.OrdinalIgnoreCase))
+            var shortCode = order.Id.ToString("N")[..8].ToUpperInvariant();
+            if (candidateCodes.Contains(shortCode))
             {
                 matchedOrder = order;
                 break;
             }
+        }
+
+        if (candidateCodes.Count > 1)
+        {
+            _logger.LogInformation(
+                "SePay webhook: content carried {Count} EDUNEXUS codes (txId={TxId}), matched order={OrderId}",
+                candidateCodes.Count, sepayTransactionId, matchedOrder?.Id);
         }
 
         if (matchedOrder == null)
