@@ -4,6 +4,7 @@ using Edu_Nexus.Application.Features.Subscriptions.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Edu_Nexus.APIs.Controllers;
 
@@ -12,10 +13,12 @@ namespace Edu_Nexus.APIs.Controllers;
 public class SubscriptionController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ILogger<SubscriptionController> _logger;
 
-    public SubscriptionController(IMediator mediator)
+    public SubscriptionController(IMediator mediator, ILogger<SubscriptionController> logger)
     {
         _mediator = mediator;
+        _logger = logger;
     }
 
     /// <summary>GET /subscription/tiers — Danh sách gói cước (public, dùng cho Pricing page)</summary>
@@ -84,7 +87,13 @@ public class SubscriptionController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { error = new { message = ex.Message } });
+            // Server-side failure (DB down, NPE, ...). Returning 400 with the raw
+            // exception message would leak internals to SePay and prevent retries
+            // for transient failures. Log and return 500 so SePay retries the
+            // delivery and ops sees the stack trace.
+            _logger.LogError(ex, "SePay webhook handler failed for txId={TxId} content='{Content}'",
+                payload?.Id, payload?.Content);
+            return StatusCode(500, new { error = new { code = "INTERNAL_ERROR" } });
         }
     }
 }
