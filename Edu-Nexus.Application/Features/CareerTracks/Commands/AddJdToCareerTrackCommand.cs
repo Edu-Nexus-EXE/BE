@@ -51,7 +51,7 @@ public class AddJdToCareerTrackCommandHandler : IRequestHandler<AddJdToCareerTra
             .FindAsync(ctj => ctj.CareerTrackId == request.CareerTrackId && ctj.JdId == request.JdId, "", cancellationToken)).Any();
             
         if (existingLink)
-            throw new Exception("409 CONFLICT");
+            throw new Exception("409 JD_ALREADY_IN_TRACK");
 
         var newLink = new CareerTrackJd
         {
