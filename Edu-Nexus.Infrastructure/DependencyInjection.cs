@@ -111,6 +111,7 @@ public static class DependencyInjection
         services.AddScoped<IResourceSuggestionService, ResourceSuggestionService>();
         services.AddScoped<ISkillMatcherService, SkillMatcherService>();
         services.AddScoped<ISkillMatcherBatchService, SkillMatcherBatchService>();
+        services.AddScoped<IRoadmapGeneratorService, RoadmapGeneratorService>();
         services.AddHttpClient<IJdUrlFetcherService, JdUrlFetcherService>();
         services.AddHttpClient<IUrlVerificationService, UrlVerificationService>();
 
