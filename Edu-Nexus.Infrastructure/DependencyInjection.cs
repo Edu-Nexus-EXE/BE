@@ -20,6 +20,7 @@ using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.SemanticKernel;
 
 namespace Edu_Nexus.Infrastructure;
 
@@ -106,6 +107,18 @@ public static class DependencyInjection
         services.AddSingleton<IAnonymizer, RegexAnonymizer>();
         services.AddSingleton<IFileStorage, LocalFileStorage>();
         services.AddHttpClient<IJdUrlFetcherService, JdUrlFetcherService>();
+
+        // Semantic Kernel setup for AI pipelines (gap analysis, roadmap generation, assessment generation)
+        var openAiApiKey = configuration["OpenAI:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(openAiApiKey))
+        {
+            var kernelBuilder = Kernel.CreateBuilder();
+            kernelBuilder.AddOpenAIChatCompletion(
+                modelId: configuration["OpenAI:Models:Smart"] ?? "gpt-4o-mini",
+                apiKey: openAiApiKey);
+
+            services.AddSingleton(kernelBuilder.Build());
+        }
 
         // Always register both fake and AI parsers; the binding for the I* interface
         // is decided by the "Ai:Enabled" flag (or per-pipeline overrides) below.
