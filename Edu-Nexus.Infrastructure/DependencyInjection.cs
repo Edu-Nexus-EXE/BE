@@ -107,6 +107,7 @@ public static class DependencyInjection
         services.AddSingleton<IAnonymizer, RegexAnonymizer>();
         services.AddSingleton<IFileStorage, LocalFileStorage>();
         services.AddSingleton<ILlmResponseValidator, LlmResponseValidator>();
+        services.AddScoped<IResourceSuggestionService, ResourceSuggestionService>();
         services.AddHttpClient<IJdUrlFetcherService, JdUrlFetcherService>();
         services.AddHttpClient<IUrlVerificationService, UrlVerificationService>();
 
