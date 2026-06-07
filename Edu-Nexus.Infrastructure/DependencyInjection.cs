@@ -106,6 +106,7 @@ public static class DependencyInjection
         services.AddSingleton<IPdfTextExtractor, PdfPigTextExtractor>();
         services.AddSingleton<IAnonymizer, RegexAnonymizer>();
         services.AddSingleton<IFileStorage, LocalFileStorage>();
+        services.AddSingleton<ILlmResponseValidator, LlmResponseValidator>();
         services.AddHttpClient<IJdUrlFetcherService, JdUrlFetcherService>();
 
         // Semantic Kernel setup for AI pipelines (gap analysis, roadmap generation, assessment generation)
