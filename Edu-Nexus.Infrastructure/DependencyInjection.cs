@@ -109,6 +109,8 @@ public static class DependencyInjection
         services.AddSingleton<IFileStorage, LocalFileStorage>();
         services.AddSingleton<ILlmResponseValidator, LlmResponseValidator>();
         services.AddScoped<IResourceSuggestionService, ResourceSuggestionService>();
+        services.AddScoped<ISkillMatcherService, SkillMatcherService>();
+        services.AddScoped<ISkillMatcherBatchService, SkillMatcherBatchService>();
         services.AddHttpClient<IJdUrlFetcherService, JdUrlFetcherService>();
         services.AddHttpClient<IUrlVerificationService, UrlVerificationService>();
 
