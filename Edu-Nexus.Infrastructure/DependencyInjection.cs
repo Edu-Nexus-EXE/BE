@@ -108,6 +108,7 @@ public static class DependencyInjection
         services.AddSingleton<IFileStorage, LocalFileStorage>();
         services.AddSingleton<ILlmResponseValidator, LlmResponseValidator>();
         services.AddHttpClient<IJdUrlFetcherService, JdUrlFetcherService>();
+        services.AddHttpClient<IUrlVerificationService, UrlVerificationService>();
 
         // Semantic Kernel setup for AI pipelines (gap analysis, roadmap generation, assessment generation)
         var openAiApiKey = configuration["OpenAI:ApiKey"];
