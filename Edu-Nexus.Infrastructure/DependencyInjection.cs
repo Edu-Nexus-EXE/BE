@@ -46,6 +46,7 @@ public static class DependencyInjection
         );
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IRagService, RagService>();
         return services;
     }
 
