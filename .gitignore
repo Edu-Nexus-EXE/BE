@@ -79,3 +79,6 @@ artifacts/
 
 # Local-only test project (option B — not pushed to GitHub)
 Edu-Nexus.Tests/
+
+# Runtime user uploads (CV files, etc.)
+Edu-Nexus.APIs/wwwroot/uploads/
