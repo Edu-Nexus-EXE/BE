@@ -4,6 +4,7 @@ using Edu_Nexus.Application.Interfaces.Storage;
 using Edu_Nexus.Domain.Entities;
 using Edu_Nexus.Domain.Enums.RagDocuments;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Edu_Nexus.Infrastructure.Jobs;
@@ -19,19 +20,22 @@ public class RagIngestionJob
     private readonly IPdfTextExtractor _pdfExtractor;
     private readonly IConfiguration _configuration;
     private readonly ILogger<RagIngestionJob> _logger;
+    private readonly IEmbeddingService? _embedding;
 
     public RagIngestionJob(
         IUnitOfWork unitOfWork,
         IFileStorage fileStorage,
         IPdfTextExtractor pdfExtractor,
         IConfiguration configuration,
-        ILogger<RagIngestionJob> logger)
+        ILogger<RagIngestionJob> logger,
+        IServiceProvider serviceProvider)
     {
         _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
         _pdfExtractor = pdfExtractor;
         _configuration = configuration;
         _logger = logger;
+        _embedding = serviceProvider.GetService<IEmbeddingService>();
     }
 
     public async Task RunAsync(Guid ragDocumentId, CancellationToken cancellationToken)
@@ -62,6 +66,20 @@ public class RagIngestionJob
 
             var chunks = Chunk(fullText, chunkSize, chunkOverlap).ToList();
 
+            IList<ReadOnlyMemory<float>>? vectors = null;
+            if (_embedding != null && chunks.Count > 0)
+            {
+                var collected = new List<ReadOnlyMemory<float>>();
+                const int batch = 100;
+                for (var start = 0; start < chunks.Count; start += batch)
+                {
+                    var slice = chunks.Skip(start).Take(batch).ToList();
+                    var embedded = await _embedding.EmbedBatchAsync(slice, cancellationToken);
+                    collected.AddRange(embedded);
+                }
+                vectors = collected;
+            }
+
             for (var i = 0; i < chunks.Count; i++)
             {
                 _unitOfWork.RagChunks.Add(new RagChunk
@@ -70,7 +88,7 @@ public class RagIngestionJob
                     ChunkIndex = i,
                     Content = chunks[i],
                     TokenCount = EstimateTokenCount(chunks[i]),
-                    Embedding = null,
+                    Embedding = vectors != null ? new Pgvector.Vector(vectors[i].ToArray()) : null,
                 });
             }
 
