@@ -76,3 +76,6 @@ artifacts/
 *.stackdump
 *.dmp
 !db/init/*.sql
+
+# Local-only test project (option B — not pushed to GitHub)
+Edu-Nexus.Tests/
