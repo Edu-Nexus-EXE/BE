@@ -63,8 +63,15 @@ public class RagService : IRagService
                 .Where(e => e.HasValue)
                 .Select(e => e!.Value)
                 .ToArray();
-            if (allowed.Length > 0)
-                q = q.Where(x => allowed.Contains(x.d.SourceType));
+            // NOTE: EF Core 9 / Npgsql cannot translate `array.Contains(enumProp)` when the
+            // enum uses a string value-converter (throws ReadOnlySpan TypeLoadException at runtime).
+            // The taxonomy has only 3 source types, so fold into a translatable OR-chain of equality.
+            if (allowed.Length == 1)
+                q = q.Where(x => x.d.SourceType == allowed[0]);
+            else if (allowed.Length == 2)
+                q = q.Where(x => x.d.SourceType == allowed[0] || x.d.SourceType == allowed[1]);
+            else if (allowed.Length >= 3)
+                q = q.Where(x => x.d.SourceType == allowed[0] || x.d.SourceType == allowed[1] || x.d.SourceType == allowed[2]);
         }
 
         var rows = await q
