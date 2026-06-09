@@ -1,8 +1,9 @@
 using Edu_Nexus.Application.Interfaces.Data;
+using Edu_Nexus.Application.Interfaces.Parsing;
 using Edu_Nexus.Domain.Entities;
+using Edu_Nexus.Domain.Enums.GapAnalysisSkills;
 using Edu_Nexus.Domain.Enums.RoadmapNodes;
 using Edu_Nexus.Domain.Enums.Roadmaps;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Edu_Nexus.Infrastructure.Jobs;
@@ -10,75 +11,103 @@ namespace Edu_Nexus.Infrastructure.Jobs;
 public class RoadmapGenerateJob
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IRoadmapGeneratorService _generator;
     private readonly ILogger<RoadmapGenerateJob> _logger;
 
-    public RoadmapGenerateJob(IUnitOfWork unitOfWork, ILogger<RoadmapGenerateJob> logger)
+    public RoadmapGenerateJob(IUnitOfWork unitOfWork, IRoadmapGeneratorService generator, ILogger<RoadmapGenerateJob> logger)
     {
         _unitOfWork = unitOfWork;
+        _generator = generator;
         _logger = logger;
     }
 
     public async Task ExecuteAsync(Guid roadmapId, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting FAKE Roadmap Generation for Roadmap {Id}", roadmapId);
-
-        var roadmap = await _unitOfWork.Roadmaps.FirstOrDefaultAsync(
-            r => r.Id == roadmapId,
-            "", cancellationToken);
-
+        var roadmap = await _unitOfWork.Roadmaps.FirstOrDefaultAsync(r => r.Id == roadmapId, "", cancellationToken);
         if (roadmap == null || roadmap.Status != RoadmapStatus.Generating)
         {
-            _logger.LogWarning("Roadmap {Id} not found or not in Generating status", roadmapId);
+            _logger.LogWarning("Roadmap {Id} not found or not Generating", roadmapId);
             return;
         }
 
         try
         {
-            // Simulate AI delay
-            await Task.Delay(3000, cancellationToken);
+            var gap = (await _unitOfWork.GapAnalyses.FindAsync(
+                g => g.JdId == roadmap.JdId && g.UserId == roadmap.UserId
+                     && g.Status == Domain.Enums.GapAnalyses.GapAnalysisStatus.Completed,
+                "", cancellationToken))
+                .OrderByDescending(g => g.Version).FirstOrDefault()
+                ?? throw new InvalidOperationException("No completed gap analysis for roadmap");
 
-            roadmap.Title = "Roadmap Backend (Fake AI Generated)";
-            
-            // Create some fake nodes
-            var node1 = new RoadmapNode
+            var gapSkills = (await _unitOfWork.GapAnalysisSkills.FindAsync(
+                s => s.GapAnalysisId == gap.Id, "", cancellationToken))
+                .Select(s => new GapSkillInput(
+                    s.SkillName,
+                    s.GapStatus switch
+                    {
+                        GapStatus.Missing => "missing",
+                        GapStatus.NeedsUpgrade => "needs_upgrade",
+                        _ => "have"
+                    },
+                    s.UrgencyScore ?? 5,
+                    s.IsMandatoryInJd))
+                .ToList();
+
+            var jd = await _unitOfWork.JdSubmissions.FirstOrDefaultAsync(j => j.Id == roadmap.JdId, "", cancellationToken);
+            var jobTitle = jd?.JobTitle ?? "Software Developer";
+
+            var result = await _generator.GenerateAsync(roadmap.Id, gap.Id, jobTitle, gapSkills, cancellationToken);
+            if (!result.Success)
             {
-                Id = Guid.NewGuid(),
-                RoadmapId = roadmap.Id,
-                SkillName = "C# Basics",
-                Description = "Learn the basics of C# programming language.",
-                SequenceOrder = 1,
-                EstimatedHours = 10,
-                IsPrerequisite = true,
-                Status = RoadmapNodeStatus.NotStarted
-            };
+                roadmap.Status = RoadmapStatus.Failed;
+                _unitOfWork.Roadmaps.Update(roadmap);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                _logger.LogWarning("Roadmap {Id} generation failed: {Error}", roadmapId, result.ErrorMessage);
+                return;
+            }
 
-            var node2 = new RoadmapNode
+            var bySequence = new Dictionary<int, RoadmapNode>();
+            foreach (var n in result.Nodes)
             {
-                Id = Guid.NewGuid(),
-                RoadmapId = roadmap.Id,
-                SkillName = "ASP.NET Core",
-                Description = "Learn how to build web APIs with ASP.NET Core.",
-                SequenceOrder = 2,
-                EstimatedHours = 20,
-                IsPrerequisite = true,
-                Status = RoadmapNodeStatus.NotStarted
-            };
+                var node = new RoadmapNode
+                {
+                    RoadmapId = roadmap.Id,
+                    SkillId = n.SkillId,
+                    SkillName = n.SkillName,
+                    Description = n.Description,
+                    SequenceOrder = n.SequenceOrder,
+                    EstimatedHours = n.EstimatedHours,
+                    IsPrerequisite = n.PrerequisiteSequences.Count == 0,
+                    Status = RoadmapNodeStatus.NotStarted,
+                };
+                _unitOfWork.RoadmapNodes.Add(node);
+                bySequence[n.SequenceOrder] = node;
+            }
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Link prerequisites
-            node2.PrerequisiteNodes.Add(node1);
+            foreach (var n in result.Nodes)
+            {
+                if (!bySequence.TryGetValue(n.SequenceOrder, out var node)) continue;
+                foreach (var prereqSeq in n.PrerequisiteSequences)
+                {
+                    if (bySequence.TryGetValue(prereqSeq, out var prereq) && prereq.Id != node.Id)
+                        node.PrerequisiteNodes.Add(prereq);
+                }
+                _unitOfWork.RoadmapNodes.Update(node);
+            }
 
-            _unitOfWork.RoadmapNodes.Add(node1);
-            _unitOfWork.RoadmapNodes.Add(node2);
-
+            roadmap.Title = result.Title ?? jobTitle;
+            roadmap.EstimatedTotalHours = result.EstimatedTotalHours;
+            roadmap.GapAnalysisId = gap.Id;
             roadmap.Status = RoadmapStatus.Active;
             _unitOfWork.Roadmaps.Update(roadmap);
-
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Successfully completed FAKE Roadmap Generation for Roadmap {Id}", roadmapId);
+
+            _logger.LogInformation("Roadmap {Id} generated with {Count} nodes", roadmapId, result.Nodes.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate roadmap for Roadmap {Id}", roadmapId);
+            _logger.LogError(ex, "RoadmapGenerateJob failed for {Id}", roadmapId);
             roadmap.Status = RoadmapStatus.Failed;
             _unitOfWork.Roadmaps.Update(roadmap);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
