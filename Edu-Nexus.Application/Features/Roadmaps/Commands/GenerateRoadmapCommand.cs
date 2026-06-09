@@ -85,7 +85,8 @@ public class GenerateRoadmapCommandHandler : IRequestHandler<GenerateRoadmapComm
             JdId = request.JdId,
             GapAnalysisId = gap.Id,
             Status = RoadmapStatus.Generating,
-            Title = null, // Set by AI later
+            Title = "Đang tạo lộ trình...", // placeholder (title NOT NULL); AI sets real title when job completes
+
             ProgressPercent = 0,
             IsOutdated = false
         };
