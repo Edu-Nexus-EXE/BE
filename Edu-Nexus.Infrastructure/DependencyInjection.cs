@@ -173,7 +173,10 @@ public static class DependencyInjection
         services.AddScoped<ICvParser>(sp => UsePipeline(configuration, "CvParse")
             ? sp.GetRequiredService<OpenAiCvParser>()
             : sp.GetRequiredService<FakeCvParser>());
-        services.AddScoped<IAssessmentQuestionGenerator>(sp => sp.GetRequiredService<FakeAssessmentQuestionGenerator>());
+        services.AddScoped<OpenAiAssessmentQuestionGenerator>();
+        services.AddScoped<IAssessmentQuestionGenerator>(sp => UsePipeline(configuration, "AssessmentGen")
+            ? sp.GetRequiredService<OpenAiAssessmentQuestionGenerator>()
+            : sp.GetRequiredService<FakeAssessmentQuestionGenerator>());
 
         services.AddScoped<IGapAnalyzer>(sp =>
             aiEnabled
