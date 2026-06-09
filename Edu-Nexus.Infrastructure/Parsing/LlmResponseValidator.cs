@@ -37,26 +37,12 @@ public class LlmResponseValidator : ILlmResponseValidator
 
     public ValidationResult ValidateJdParse(JsonDocument doc)
     {
-        var errors = new List<string>();
         var root = doc.RootElement;
-
-        var requiredFields = new[] { "jobTitle", "jobRoleCategory", "seniorityLevel" };
-        foreach (var field in requiredFields)
-        {
-            if (!root.TryGetProperty(field, out var val) || val.ValueKind == JsonValueKind.Null)
-                errors.Add($"Missing required field: {field}");
-        }
-
-        if (root.TryGetProperty("hardSkills", out var hardSkills) && hardSkills.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var skill in hardSkills.EnumerateArray())
-            {
-                if (!skill.TryGetProperty("skillName", out var name) || name.ValueKind != JsonValueKind.String)
-                    errors.Add("Hard skill missing skillName");
-            }
-        }
-
-        return errors.Count == 0 ? ValidationResult.Success : ValidationResult.Fail(errors.ToArray());
+        if (!root.TryGetProperty("job_title", out var jt) || string.IsNullOrWhiteSpace(jt.GetString()))
+            return ValidationResult.Fail("Missing job_title");
+        if (!root.TryGetProperty("hard_skills", out var hs) || hs.ValueKind != JsonValueKind.Array || hs.GetArrayLength() == 0)
+            return ValidationResult.Fail("Missing hard_skills");
+        return ValidationResult.Success;
     }
 
     public ValidationResult ValidateAssessment(JsonDocument doc)

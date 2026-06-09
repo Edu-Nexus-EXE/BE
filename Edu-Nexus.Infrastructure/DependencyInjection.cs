@@ -165,7 +165,10 @@ public static class DependencyInjection
         // JD / CV / Question generators stay on the fake heuristic until their OpenAI
         // implementations land. Wiring them follows the exact same pattern as the
         // gap analyzer below.
-        services.AddScoped<IJdParser>(sp => sp.GetRequiredService<FakeJdParser>());
+        services.AddScoped<OpenAiJdParser>();
+        services.AddScoped<IJdParser>(sp => UsePipeline(configuration, "JdParse")
+            ? sp.GetRequiredService<OpenAiJdParser>()
+            : sp.GetRequiredService<FakeJdParser>());
         services.AddScoped<ICvParser>(sp => sp.GetRequiredService<FakeCvParser>());
         services.AddScoped<IAssessmentQuestionGenerator>(sp => sp.GetRequiredService<FakeAssessmentQuestionGenerator>());
 
@@ -175,5 +178,12 @@ public static class DependencyInjection
                 : sp.GetRequiredService<FakeGapAnalyzer>());
 
         return services;
+    }
+
+    private static bool UsePipeline(IConfiguration config, string name)
+    {
+        var perPipeline = config.GetValue<bool?>($"Ai:Pipelines:{name}");
+        if (perPipeline.HasValue) return perPipeline.Value;
+        return config.GetValue<bool>("Ai:Enabled", false);
     }
 }
