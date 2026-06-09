@@ -52,6 +52,12 @@ public class CreateAssessmentPathCommandHandler : IRequestHandler<CreateAssessme
             PathType = pathType,
         };
 
+        // FR3.4: Attempt to reuse CV from previous JD in same field
+        // TODO: When pathType == Cv, check if user has a completed CV session
+        // from a previous JD in the same jobRoleCategory. If found, link that
+        // CV to this path instead of requiring new upload. This reduces friction
+        // for users applying to similar positions in the same field.
+
         _unitOfWork.AssessmentPaths.Add(path);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

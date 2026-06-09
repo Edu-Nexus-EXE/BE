@@ -38,7 +38,12 @@ public class GetCareerTrackByIdQueryHandler : IRequestHandler<GetCareerTrackById
         if (careerTrack == null)
             throw new Exception("404 NOT_FOUND");
 
-        var jdIds = careerTrack.CareerTrackJds.Select(ctj => ctj.JdId).ToList();
+        // Filter out soft-deleted JDs (where Jd.DeletedAt != null)
+        var activeCareerTrackJds = careerTrack.CareerTrackJds
+            .Where(ctj => ctj.Jd != null && ctj.Jd.DeletedAt == null)
+            .ToList();
+
+        var jdIds = activeCareerTrackJds.Select(ctj => ctj.JdId).ToList();
 
         var roadmaps = (await _unitOfWork.Roadmaps
             .FindAsync(r => jdIds.Contains(r.JdId), "", cancellationToken)).ToList();
@@ -57,7 +62,7 @@ public class GetCareerTrackByIdQueryHandler : IRequestHandler<GetCareerTrackById
             Name = careerTrack.Name,
             Description = careerTrack.Description,
             CreatedAt = careerTrack.CreatedAt,
-            Jds = careerTrack.CareerTrackJds.Select(ctj =>
+            Jds = activeCareerTrackJds.Select(ctj =>
             {
                 roadmapDict.TryGetValue(ctj.JdId, out var rm);
 

@@ -77,7 +77,13 @@ public class GapAnalysisController : ControllerBase
             {
                 return Ok(new { data = result });
             }
-            return Ok(new { data = result.FirstOrDefault() });
+
+            var single = result.FirstOrDefault();
+            if (single == null)
+            {
+                return NotFound(new { error = new { code = "GAP_NOT_FOUND", message = "Chưa có gap analysis cho JD này" } });
+            }
+            return Ok(new { data = single });
         }
         catch (Exception ex) when (ex.Message == "401 UNAUTHORIZED")
         {
