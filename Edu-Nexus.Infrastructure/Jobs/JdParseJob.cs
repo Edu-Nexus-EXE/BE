@@ -13,14 +13,16 @@ public class JdParseJob
     private readonly IJdParser _jdParser;
     private readonly IAnonymizer _anonymizer;
     private readonly IJdUrlFetcherService _jdUrlFetcher;
+    private readonly ISkillMatcherBatchService _skillMatcher;
     private readonly ILogger<JdParseJob> _logger;
 
-    public JdParseJob(IUnitOfWork unitOfWork, IJdParser jdParser, IAnonymizer anonymizer, IJdUrlFetcherService jdUrlFetcher, ILogger<JdParseJob> logger)
+    public JdParseJob(IUnitOfWork unitOfWork, IJdParser jdParser, IAnonymizer anonymizer, IJdUrlFetcherService jdUrlFetcher, ISkillMatcherBatchService skillMatcher, ILogger<JdParseJob> logger)
     {
         _unitOfWork = unitOfWork;
         _jdParser = jdParser;
         _anonymizer = anonymizer;
         _jdUrlFetcher = jdUrlFetcher;
+        _skillMatcher = skillMatcher;
         _logger = logger;
     }
 
@@ -60,12 +62,20 @@ public class JdParseJob
             jd.ParsedAt = DateTime.UtcNow;
             jd.ParseError = null;
 
+            // Match all skill names to Skill IDs (both hard and soft)
+            var allSkillNames = parsed.HardSkills.Select(s => s.SkillNameRaw)
+                .Concat(parsed.SoftSkills.Select(s => s.SkillNameRaw))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            var skillIdMap = await _skillMatcher.MatchSkillsAsync(allSkillNames, cancellationToken);
+
             foreach (var s in parsed.HardSkills)
             {
+                var skillId = skillIdMap.TryGetValue(s.SkillNameRaw, out var id) ? id : null;
                 _unitOfWork.JdSkills.Add(new JdSkill
                 {
                     JdId = jd.Id,
                     SkillNameRaw = s.SkillNameRaw,
+                    SkillId = skillId,
                     SkillType = SkillType.HardSkill,
                     IsMandatory = s.IsMandatory,
                 });
@@ -73,10 +83,12 @@ public class JdParseJob
 
             foreach (var s in parsed.SoftSkills)
             {
+                var skillId = skillIdMap.TryGetValue(s.SkillNameRaw, out var id) ? id : null;
                 _unitOfWork.JdSkills.Add(new JdSkill
                 {
                     JdId = jd.Id,
                     SkillNameRaw = s.SkillNameRaw,
+                    SkillId = skillId,
                     SkillType = SkillType.SoftSkill,
                     IsMandatory = s.IsMandatory,
                 });
