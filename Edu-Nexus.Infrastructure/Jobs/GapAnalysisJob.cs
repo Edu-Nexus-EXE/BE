@@ -16,12 +16,14 @@ public class GapAnalysisJob
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IGapAnalyzer _analyzer;
+    private readonly ISkillMatcherBatchService _skillMatcher;
     private readonly ILogger<GapAnalysisJob> _logger;
 
-    public GapAnalysisJob(IUnitOfWork unitOfWork, IGapAnalyzer analyzer, ILogger<GapAnalysisJob> logger)
+    public GapAnalysisJob(IUnitOfWork unitOfWork, IGapAnalyzer analyzer, ISkillMatcherBatchService skillMatcher, ILogger<GapAnalysisJob> logger)
     {
         _unitOfWork = unitOfWork;
         _analyzer = analyzer;
+        _skillMatcher = skillMatcher;
         _logger = logger;
     }
 
@@ -45,18 +47,18 @@ public class GapAnalysisJob
             var input = await BuildInputAsync(gap, cancellationToken);
             var result = await _analyzer.AnalyzeAsync(input, cancellationToken);
 
-            var skills = await _unitOfWork.Skills.GetAllAsync("", cancellationToken);
-            var skillsBySlug = skills
-                .GroupBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
+            // Match skill names to IDs using hybrid matching (exact + pg_trgm + LLM)
+            var skillNames = result.Skills.Select(s => s.SkillName).Distinct();
+            var skillIdMap = await _skillMatcher.MatchSkillsAsync(skillNames, cancellationToken);
 
             foreach (var outcome in result.Skills)
             {
+                var skillId = skillIdMap.TryGetValue(outcome.SkillName, out var id) ? id : null;
                 _unitOfWork.GapAnalysisSkills.Add(new GapAnalysisSkill
                 {
                     GapAnalysisId = gap.Id,
                     SkillName = outcome.SkillName,
-                    SkillId = skillsBySlug.TryGetValue(outcome.SkillName, out var id) ? id : null,
+                    SkillId = skillId,
                     GapStatus = ParseGapStatus(outcome.GapStatus),
                     CurrentLevel = ParseLevel(outcome.CurrentLevel),
                     TargetLevel = ParseLevel(outcome.TargetLevel) ?? SkillLevel.Intermediate,
