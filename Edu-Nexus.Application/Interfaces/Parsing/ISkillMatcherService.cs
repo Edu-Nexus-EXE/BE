@@ -32,4 +32,9 @@ public interface ISkillMatcherBatchService
     /// Clear cache for fresh matching.
     /// </summary>
     void ClearCache();
+
+    /// <summary>Hybrid match: pg_trgm pre-filter + LLM batch decide. Always returns a Guid
+    /// (inserts a new [AI-GENERATED] skill if no confident match) — used by Roadmap generation.</summary>
+    Task<Dictionary<string, Guid>> MatchOrCreateBatchAsync(
+        IEnumerable<string> skillNames, CancellationToken cancellationToken = default);
 }
