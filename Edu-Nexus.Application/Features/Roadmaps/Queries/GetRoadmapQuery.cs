@@ -40,28 +40,32 @@ public class GetRoadmapQueryHandler : IRequestHandler<GetRoadmapQuery, RoadmapDe
             // We need to fetch resources for each node.
             // Normally we'd do a complex Join, but let's just fetch the SkillResources for the involved skills.
             var skillIds = roadmap.RoadmapNodes.Where(n => n.SkillId.HasValue).Select(n => n.SkillId!.Value).Distinct().ToList();
-            
+
             var skillResources = (await _unitOfWork.SkillResources.FindAsync(
                 sr => skillIds.Contains(sr.SkillId),
                 "Resource", cancellationToken)).ToList();
+
+            // Load onboarding preferences once for ranking (FR5.2)
+            var onboarding = await _unitOfWork.OnboardingResponses
+                .FirstOrDefaultAsync(o => o.UserId == userId, "", cancellationToken);
 
             // Also fetch prereq nodes to map prerequisiteNodeIds
             var allNodeIds = roadmap.RoadmapNodes.Select(n => n.Id).ToList();
             // Assuming we can't easily include self-referencing many-to-many in generic FirstOrDefaultAsync, we might need to fetch the mappings separately or assume they are loaded.
             // Let's use a simpler mapping first and omit prerequisiteNodeIds if not loaded by default, or just do a manual query.
             // Wait, we can fetch PrerequisiteNodes by loading the RoadmapNode entity again if needed, or we just map empty for now.
-            
+
             foreach (var node in roadmap.RoadmapNodes.OrderBy(n => n.SequenceOrder))
             {
                 var resourcesDto = new List<LearningResourceDto>();
                 if (node.SkillId.HasValue)
                 {
                     var resForSkill = skillResources.Where(sr => sr.SkillId == node.SkillId.Value && sr.Resource.IsActive).ToList();
-                    // Assume sorting by preference is done here or separately.
-                    foreach(var sr in resForSkill)
+                    // Map to DTOs
+                    var mappedResources = resForSkill.Select(sr =>
                     {
                         var lr = sr.Resource;
-                        resourcesDto.Add(new LearningResourceDto(
+                        return new LearningResourceDto(
                             lr.Id,
                             lr.Title,
                             lr.Type.ToString().ToLowerInvariant(),
@@ -73,8 +77,12 @@ public class GetRoadmapQueryHandler : IRequestHandler<GetRoadmapQuery, RoadmapDe
                             lr.Language,
                             lr.DurationMinutes,
                             sr.IsPrimary
-                        ));
-                    }
+                        );
+                    }).ToList();
+                    // Rank by onboarding preferences if available
+                    if (onboarding != null)
+                        mappedResources = mappedResources.OrderByDescending(r => RankResource(r, onboarding.LearningBudget, onboarding.PreferredChannel)).ToList();
+                    resourcesDto = mappedResources;
                 }
 
                 nodesDto.Add(new RoadmapNodeDetailDto(
@@ -124,6 +132,18 @@ public class GetRoadmapQueryHandler : IRequestHandler<GetRoadmapQuery, RoadmapDe
             roadmap.CreatedAt,
             nodesDto
         );
+    }
+
+    private static int RankResource(LearningResourceDto r, string? budget, string? channel)
+    {
+        int score = 0;
+        if (string.Equals(budget, "Chỉ free", StringComparison.OrdinalIgnoreCase) && r.IsFree) score += 10;
+        if (string.Equals(channel, "Video", StringComparison.OrdinalIgnoreCase) && r.Type == "video") score += 10;
+        if (string.Equals(channel, "Đọc tài liệu", StringComparison.OrdinalIgnoreCase)
+            && (r.Type == "article" || r.Type == "documentation")) score += 10;
+        if (r.Language == "vi") score += 3;
+        if (r.IsPrimary) score += 5;
+        return score;
     }
 }
 

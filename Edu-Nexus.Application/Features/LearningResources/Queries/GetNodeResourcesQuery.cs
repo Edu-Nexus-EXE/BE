@@ -61,11 +61,8 @@ public class GetNodeResourcesQueryHandler : IRequestHandler<GetNodeResourcesQuer
         var onboarding = await _unitOfWork.OnboardingResponses
             .FirstOrDefaultAsync(o => o.UserId == userId, "", cancellationToken);
 
-        // 7. Rank resources based on user preferences
-        var ranked = RankResources(skillResources, onboarding);
-
-        // 8. Map to DTO
-        return ranked.Select(sr => new NodeResourceDto
+        // 7. Map to DTO
+        var resources = skillResources.Select(sr => new NodeResourceDto
         {
             Id = sr.Resource.Id,
             Title = sr.Resource.Title,
@@ -79,44 +76,23 @@ public class GetNodeResourcesQueryHandler : IRequestHandler<GetNodeResourcesQuer
             DurationMinutes = sr.Resource.DurationMinutes,
             IsPrimary = sr.IsPrimary
         }).ToList();
+
+        // 8. Rank resources based on onboarding preferences; skip ranking if no onboarding
+        if (onboarding != null)
+            resources = resources.OrderByDescending(r => RankResource(r, onboarding.LearningBudget, onboarding.PreferredChannel)).ToList();
+
+        return resources;
     }
 
-    /// <summary>
-    /// Rank resources based on user onboarding preferences (FR5.2):
-    /// - Primary resources first
-    /// - If user budget is tight ("free" or "under_100k"), prefer free resources
-    /// - Match preferred_channel to resource type (e.g. "video" → Video type first)
-    /// - Sequence order as tiebreaker
-    /// </summary>
-    private static List<Domain.Entities.SkillResource> RankResources(
-        List<Domain.Entities.SkillResource> resources,
-        Domain.Entities.OnboardingResponse? onboarding)
+    private static int RankResource(NodeResourceDto r, string? budget, string? channel)
     {
-        var preferFree = onboarding?.LearningBudget is "free" or "under_100k";
-        var preferredType = onboarding?.PreferredChannel?.ToLowerInvariant();
-
-        return resources
-            .OrderByDescending(sr => sr.IsPrimary)                                          // Primary first
-            .ThenByDescending(sr => preferFree && sr.Resource.IsFree)                       // Free first if budget-conscious
-            .ThenByDescending(sr => MatchesPreferredChannel(sr.Resource.Type.ToString().ToLowerInvariant(), preferredType)) // Match channel preference
-            .ThenBy(sr => sr.SequenceOrder ?? short.MaxValue)                               // Sequence order
-            .ToList();
-    }
-
-    /// <summary>
-    /// Check if a resource type matches the user's preferred learning channel.
-    /// E.g. preferred "video" matches Video type, "reading" matches Article/Documentation.
-    /// </summary>
-    private static bool MatchesPreferredChannel(string resourceType, string? preferredChannel)
-    {
-        if (string.IsNullOrEmpty(preferredChannel)) return false;
-
-        return preferredChannel switch
-        {
-            "video" => resourceType == "video",
-            "reading" or "article" => resourceType is "article" or "documentation",
-            "course" or "structured" => resourceType == "course",
-            _ => false
-        };
+        int score = 0;
+        if (string.Equals(budget, "Chỉ free", StringComparison.OrdinalIgnoreCase) && r.IsFree) score += 10;
+        if (string.Equals(channel, "Video", StringComparison.OrdinalIgnoreCase) && r.Type == "video") score += 10;
+        if (string.Equals(channel, "Đọc tài liệu", StringComparison.OrdinalIgnoreCase)
+            && (r.Type == "article" || r.Type == "documentation")) score += 10;
+        if (r.Language == "vi") score += 3;
+        if (r.IsPrimary) score += 5;
+        return score;
     }
 }
