@@ -16,6 +16,14 @@ public class RagService : IRagService
     private readonly IConfiguration _config;
     private readonly ILogger<RagService> _logger;
 
+    private static readonly Dictionary<string, Domain.Enums.RagDocuments.RagDocumentSourceType> SourceTypeMap =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["fptu_curriculum"] = Domain.Enums.RagDocuments.RagDocumentSourceType.FptuCurriculum,
+            ["fptu_syllabus"]   = Domain.Enums.RagDocuments.RagDocumentSourceType.FptuSyllabus,
+            ["external_doc"]    = Domain.Enums.RagDocuments.RagDocumentSourceType.ExternalDoc,
+        };
+
     // IEmbeddingService chỉ đăng ký khi có OpenAI key. .NET DI KHÔNG honor optional ctor
     // param → resolve qua IServiceProvider.GetService (null nếu chưa đăng ký).
     public RagService(EduNexusDbContext context, IConfiguration config,
@@ -46,7 +54,12 @@ public class RagService : IRagService
         if (sourceTypes is { Length: > 0 })
         {
             var allowed = sourceTypes
-                .Select(s => Enum.TryParse<Domain.Enums.RagDocuments.RagDocumentSourceType>(s, true, out var e) ? (Domain.Enums.RagDocuments.RagDocumentSourceType?)e : null)
+                .Select(s =>
+                {
+                    if (SourceTypeMap.TryGetValue(s, out var mapped)) return (Domain.Enums.RagDocuments.RagDocumentSourceType?)mapped;
+                    return Enum.TryParse<Domain.Enums.RagDocuments.RagDocumentSourceType>(s, true, out var e)
+                        ? (Domain.Enums.RagDocuments.RagDocumentSourceType?)e : null;
+                })
                 .Where(e => e.HasValue)
                 .Select(e => e!.Value)
                 .ToArray();
