@@ -2,9 +2,6 @@ using System.Text.Json;
 using Edu_Nexus.Application.Interfaces.Parsing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Edu_Nexus.Infrastructure.Parsing;
 
@@ -14,24 +11,14 @@ namespace Edu_Nexus.Infrastructure.Parsing;
 /// the user-provided JD + CV/assessment + onboarding signals.
 public class OpenAiGapAnalyzer : IGapAnalyzer
 {
-    private readonly IChatCompletionService _chat;
-    private readonly OpenAIPromptExecutionSettings _settings;
+    private readonly ILlmService _llm;
+    private readonly int _maxTokens;
     private readonly ILogger<OpenAiGapAnalyzer> _logger;
 
-    public OpenAiGapAnalyzer(IConfiguration configuration, ILogger<OpenAiGapAnalyzer> logger)
+    public OpenAiGapAnalyzer(ILlmService llm, IConfiguration configuration, ILogger<OpenAiGapAnalyzer> logger)
     {
-        var apiKey = configuration["OpenAI:ApiKey"]
-            ?? throw new InvalidOperationException("OpenAI:ApiKey is not configured. Set it via user-secrets.");
-        var model = configuration["OpenAI:Models:Smart"] ?? "gpt-4o-mini";
-        var maxTokens = configuration.GetValue<int?>("OpenAI:MaxTokens:GapAnalysis") ?? 1500;
-
-        _chat = new OpenAIChatCompletionService(model, apiKey);
-        _settings = new OpenAIPromptExecutionSettings
-        {
-            MaxTokens = maxTokens,
-            Temperature = 0.2,
-            ResponseFormat = "json_object",
-        };
+        _llm = llm;
+        _maxTokens = configuration.GetValue<int?>("OpenAI:MaxTokens:GapAnalysis") ?? 1500;
         _logger = logger;
     }
 
@@ -40,16 +27,14 @@ public class OpenAiGapAnalyzer : IGapAnalyzer
         var systemPrompt = BuildSystemPrompt();
         var userPrompt = BuildUserPrompt(input);
 
-        var history = new ChatHistory();
-        history.AddSystemMessage(systemPrompt);
-        history.AddUserMessage(userPrompt);
+        var resp = await _llm.ChatJsonAsync(systemPrompt, userPrompt, "fast", _maxTokens, 0.2, cancellationToken);
+        await _llm.LogQueryAsync("gap_analysis", resp, "gpt-4o-mini");
+        if (!resp.Success)
+            throw new InvalidOperationException("Gap analysis: LLM call failed after retry");
 
-        var response = await _chat.GetChatMessageContentAsync(history, _settings, cancellationToken: cancellationToken);
-        var raw = response.Content ?? "{}";
+        _logger.LogDebug("Gap analysis LLM raw response: {Raw}", resp.Content);
 
-        _logger.LogDebug("Gap analysis LLM raw response: {Raw}", raw);
-
-        return ParseResponse(raw, input);
+        return ParseResponse(resp.Content, input);
     }
 
     private static string BuildSystemPrompt() =>
