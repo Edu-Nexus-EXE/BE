@@ -56,9 +56,8 @@ public class LlmService : ILlmService
             var response = await chat.GetChatMessageContentAsync(history, settings, _kernel, ct);
             sw.Stop();
 
-            var meta = response.Metadata ?? new Dictionary<string, object?>();
-            var pt = ToInt(meta.GetValueOrDefault("Usage.PromptTokens"));
-            var ctk = ToInt(meta.GetValueOrDefault("Usage.CompletionTokens"));
+            IReadOnlyDictionary<string, object?> meta = response.Metadata ?? new Dictionary<string, object?>();
+            var (pt, ctk) = ExtractTokens(meta);
             var model = serviceId == "smart" ? "gpt-4o" : "gpt-4o-mini";
 
             return new LlmResponse(response.Content ?? "{}", pt, ctk,
@@ -107,4 +106,32 @@ public class LlmService : ILlmService
     };
 
     private static int ToInt(object? v) => v is null ? 0 : Convert.ToInt32(v);
+
+    private static (int prompt, int completion) ExtractTokens(IReadOnlyDictionary<string, object?> meta)
+    {
+        // SK 1.76 OpenAI connector: meta["Usage"] is an OpenAI.Chat.ChatTokenUsage-like object.
+        if (meta.TryGetValue("Usage", out var usage) && usage is not null)
+        {
+            var prompt = ReadIntProp(usage, "InputTokenCount", "PromptTokens", "PromptTokenCount");
+            var completion = ReadIntProp(usage, "OutputTokenCount", "CompletionTokens", "CompletionTokenCount");
+            if (prompt > 0 || completion > 0) return (prompt, completion);
+        }
+        // Fallback: some providers flatten keys.
+        return (ToInt(meta.GetValueOrDefault("Usage.PromptTokens")),
+                ToInt(meta.GetValueOrDefault("Usage.CompletionTokens")));
+    }
+
+    private static int ReadIntProp(object obj, params string[] candidateNames)
+    {
+        var type = obj.GetType();
+        foreach (var name in candidateNames)
+        {
+            var prop = type.GetProperty(name);
+            if (prop?.GetValue(obj) is { } val)
+            {
+                try { return Convert.ToInt32(val); } catch { /* try next */ }
+            }
+        }
+        return 0;
+    }
 }
