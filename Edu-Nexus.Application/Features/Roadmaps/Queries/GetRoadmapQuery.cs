@@ -137,7 +137,7 @@ public class GetRoadmapQueryHandler : IRequestHandler<GetRoadmapQuery, RoadmapDe
     private static int RankResource(LearningResourceDto r, string? budget, string? channel)
     {
         int score = 0;
-        if (string.Equals(budget, "Chỉ free", StringComparison.OrdinalIgnoreCase) && r.IsFree) score += 10;
+        if (string.Equals(budget, "free", StringComparison.OrdinalIgnoreCase) && r.IsFree) score += 10;
         if (string.Equals(channel, "Video", StringComparison.OrdinalIgnoreCase) && r.Type == "video") score += 10;
         if (string.Equals(channel, "Đọc tài liệu", StringComparison.OrdinalIgnoreCase)
             && (r.Type == "article" || r.Type == "documentation")) score += 10;
