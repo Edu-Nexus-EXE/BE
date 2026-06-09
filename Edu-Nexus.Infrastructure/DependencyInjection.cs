@@ -47,6 +47,17 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IRagService, RagService>();
+
+        var redis = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redis))
+        {
+            services.AddStackExchangeRedisCache(o =>
+            {
+                o.Configuration = redis;
+                o.InstanceName = "edunexus:";
+            });
+        }
+
         return services;
     }
 
@@ -115,17 +126,31 @@ public static class DependencyInjection
         services.AddHttpClient<IJdUrlFetcherService, JdUrlFetcherService>();
         services.AddHttpClient<IUrlVerificationService, UrlVerificationService>();
 
-        // Semantic Kernel setup for AI pipelines (gap analysis, roadmap generation, assessment generation)
+        // Semantic Kernel: 2 chat models (fast/smart) + embedding
         var openAiApiKey = configuration["OpenAI:ApiKey"];
         if (!string.IsNullOrWhiteSpace(openAiApiKey))
         {
-            var kernelBuilder = Kernel.CreateBuilder();
-            kernelBuilder.AddOpenAIChatCompletion(
-                modelId: configuration["OpenAI:Models:Smart"] ?? "gpt-4o-mini",
-                apiKey: openAiApiKey);
+            var fast = configuration["OpenAI:Models:Fast"] ?? "gpt-4o-mini";
+            var smart = configuration["OpenAI:Models:Smart"] ?? "gpt-4o";
+            var embedding = configuration["OpenAI:Embedding"] ?? "text-embedding-3-small";
 
+            var kernelBuilder = Kernel.CreateBuilder();
+            kernelBuilder.AddOpenAIChatCompletion(fast, openAiApiKey, serviceId: "fast");
+            kernelBuilder.AddOpenAIChatCompletion(smart, openAiApiKey, serviceId: "smart");
+#pragma warning disable SKEXP0010
+            kernelBuilder.AddOpenAITextEmbeddingGeneration(embedding, openAiApiKey);
+#pragma warning restore SKEXP0010
             services.AddSingleton(kernelBuilder.Build());
+
+            // Embedding service resolves ITextEmbeddingGenerationService from the kernel
+#pragma warning disable SKEXP0001
+            services.AddSingleton(sp =>
+                sp.GetRequiredService<Kernel>().GetRequiredService<Microsoft.SemanticKernel.Embeddings.ITextEmbeddingGenerationService>());
+#pragma warning restore SKEXP0001
+            services.AddScoped<IEmbeddingService, EmbeddingService>();
         }
+
+        services.AddScoped<ILlmService, LlmService>();
 
         // Always register both fake and AI parsers; the binding for the I* interface
         // is decided by the "Ai:Enabled" flag (or per-pipeline overrides) below.
