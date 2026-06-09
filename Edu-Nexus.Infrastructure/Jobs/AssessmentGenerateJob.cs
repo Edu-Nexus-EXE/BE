@@ -15,15 +15,18 @@ public class AssessmentGenerateJob
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAssessmentQuestionGenerator _generator;
+    private readonly IRagService _rag;
     private readonly ILogger<AssessmentGenerateJob> _logger;
 
     public AssessmentGenerateJob(
         IUnitOfWork unitOfWork,
         IAssessmentQuestionGenerator generator,
+        IRagService rag,
         ILogger<AssessmentGenerateJob> logger)
     {
         _unitOfWork = unitOfWork;
         _generator = generator;
+        _rag = rag;
         _logger = logger;
     }
 
@@ -56,6 +59,15 @@ public class AssessmentGenerateJob
                 .ToList()
                 ?? new List<string>();
 
+            // Retrieve RAG context for each skill to provide knowledge base context for question generation
+            var ragContextBySkill = new Dictionary<string, List<string>>();
+            foreach (var skill in hardSkills)
+            {
+                var chunks = await _rag.SearchBySkillAsync(skill, limit: 3, cancellationToken);
+                ragContextBySkill[skill] = chunks.Select(c => c.Content).ToList();
+                _logger.LogDebug("AssessmentGenerateJob: retrieved {Count} RAG chunks for skill {Skill}", chunks.Count, skill);
+            }
+
             var input = new AssessmentGenerationInput(
                 JobRoleCategory: jd?.JobRoleCategory ?? "general_software",
                 SeniorityLevel: jd?.SeniorityLevel,
@@ -63,6 +75,8 @@ public class AssessmentGenerateJob
                 Part1Target: DefaultPart1Count,
                 Part2Target: DefaultPart2Count);
 
+            // TODO: Pass ragContextBySkill to question generator when AssessmentGenerationInput is extended
+            // For now, the generator uses heuristic/fake implementation without RAG context
             var questions = await _generator.GenerateAsync(input, cancellationToken);
 
             short seq = 1;
