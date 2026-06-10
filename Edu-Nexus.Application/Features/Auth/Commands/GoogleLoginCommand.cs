@@ -67,6 +67,17 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Aut
             };
             
             _unitOfWork.Users.Add(user);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var freeTier = await _unitOfWork.SubscriptionTiers.FirstOrDefaultAsync(
+                t => t.TierCode == SubscriptionTierCode.Free && t.IsActive,
+                "",
+                cancellationToken);
+            var freeSubscription = FreeSubscriptionFactory.Create(user.Id, freeTier, DateTime.UtcNow);
+            if (freeSubscription is not null)
+            {
+                _unitOfWork.UserSubscriptions.Add(freeSubscription);
+            }
         }
         else
         {

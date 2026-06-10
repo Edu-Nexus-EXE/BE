@@ -3,7 +3,6 @@ using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Security;
 using Edu_Nexus.Domain.Entities;
 using Edu_Nexus.Domain.Enums.SubscriptionTiers;
-using Edu_Nexus.Domain.Enums.UserSubscriptions;
 using Edu_Nexus.Domain.Enums.Users;
 using MediatR;
 
@@ -64,6 +63,16 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthRespo
 
         _unitOfWork.Users.Add(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var freeTier = await _unitOfWork.SubscriptionTiers.FirstOrDefaultAsync(
+            t => t.TierCode == SubscriptionTierCode.Free && t.IsActive,
+            "",
+            cancellationToken);
+        var freeSubscription = FreeSubscriptionFactory.Create(user.Id, freeTier, DateTime.UtcNow);
+        if (freeSubscription is not null)
+        {
+            _unitOfWork.UserSubscriptions.Add(freeSubscription);
+        }
 
         var accessToken = _tokenService.GenerateAccessToken(user);
         var refreshTokenStr = _tokenService.GenerateRefreshToken();

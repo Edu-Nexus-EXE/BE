@@ -1,6 +1,7 @@
 using Edu_Nexus.APIs.Extensions;
 using Edu_Nexus.Application;
 using Edu_Nexus.Infrastructure;
+using Edu_Nexus.Infrastructure.Data;
 using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,7 +22,6 @@ builder.Services.AddCors(options =>
                   )
                   .AllowAnyHeader()
                   .AllowAnyMethod();
-                  // .AllowCredentials(); // (Mở comment dòng này nếu bạn dùng cookie/session)
         });
 });
 
@@ -49,9 +49,11 @@ if (app.Environment.IsDevelopment())
     app.UseHangfireDashboard("/hangfire");
 }
 
-// Register Hangfire Recurring Jobs for subscription expiration and notifications
 using (var scope = app.Services.CreateScope())
 {
+    var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
+    await seeder.SeedAsync(CancellationToken.None);
+
     var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
     
     recurringJobManager.AddOrUpdate<Edu_Nexus.Infrastructure.Jobs.SubscriptionExpirationJob>(
@@ -73,3 +75,5 @@ using (var scope = app.Services.CreateScope())
 app.MapControllers();
 
 app.Run();
+
+public partial class Program;

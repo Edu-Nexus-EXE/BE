@@ -46,6 +46,7 @@ public static class DependencyInjection
         );
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<DataSeeder>();
         services.AddScoped<IRagService, RagService>();
 
         var redis = configuration.GetConnectionString("Redis");
