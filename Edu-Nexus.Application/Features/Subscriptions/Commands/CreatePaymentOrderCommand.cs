@@ -34,7 +34,7 @@ public class CreatePaymentOrderCommandHandler : IRequestHandler<CreatePaymentOrd
 
         var req = request.Request;
 
-        if (req.DurationMonths <= 0 || req.DurationMonths > 12)
+        if (!SubscriptionDurations.IsValid(req.DurationMonths))
             throw new Exception("422 INVALID_DURATION");
 
         if (!Enum.TryParse<SubscriptionTierCode>(req.TierCode, true, out var tierCode))

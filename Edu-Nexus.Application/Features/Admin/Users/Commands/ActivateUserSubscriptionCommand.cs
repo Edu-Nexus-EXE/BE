@@ -1,4 +1,5 @@
 using Edu_Nexus.Application.DTOs;
+using Edu_Nexus.Application.Features.Subscriptions;
 using Edu_Nexus.Application.Interfaces.Admin;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Security;
@@ -29,7 +30,7 @@ public class ActivateUserSubscriptionCommandHandler : IRequestHandler<ActivateUs
     {
         var adminId = _currentUserService.UserId ?? throw new Exception("401 UNAUTHORIZED");
 
-        if (request.Request.DurationMonths <= 0 || request.Request.DurationMonths > 24)
+        if (!SubscriptionDurations.IsValid(request.Request.DurationMonths))
         {
             throw new Exception("422 INVALID_DURATION");
         }
