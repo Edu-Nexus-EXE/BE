@@ -165,6 +165,38 @@ Roadmap generator builds a structured learning path with prerequisites. Fetches 
 `POST/PUT/DELETE /portfolio/certificates` and `POST/PUT/DELETE /portfolio/projects` to manage achievements. Includes Quota enforcement.
 Public portfolio access via `GET /p/:slug`.
 
+### S3.2 Subscription & Payment (FR8)
+- `GET /subscription/tiers` — list available subscription tiers (free/pro/premium).
+- `POST /subscription/orders` — create SePay payment order with VietQR code for bank transfer.
+- `POST /subscription/webhook` — webhook handler for SePay payment callbacks.
+  - Deduplicates by SePay transaction ID to prevent double-processing.
+  - Validates transfer amount and content pattern (regex EDUNEXUS shortcode extraction).
+  - Activates/renews user subscription on successful payment.
+  - Logs unreconciled transfers (mismatched amounts, no matching order) for manual reconciliation.
+- `GET /subscription/me` — returns current subscription status, tier, expiration, and quota usage.
+- Background job `ExpirePendingPaymentOrdersJob` (every 5 min) cancels stale pending orders after QR window expires (default 30 min TTL).
+
+### S3.3 Admin & RAG Infrastructure
+- **Skill Matcher Services** (`ISkillMatcherService`, `ISkillMatcherBatchService`) — hybrid skill name matching via exact match, PostgreSQL `pg_trgm` similarity, and optional LLM fuzzy matching.
+- **LLM Response Validators** (`ILlmResponseValidator`) — validates JSON schemas from AI pipelines (gap analysis, assessment generation, resource suggestions) before persisting.
+- **URL Verification Service** (`IUrlVerificationService`) — verifies AI-generated resource URLs via HEAD request to prevent hallucinated broken links.
+- **RAG Service** (`IRagService`) — PostgreSQL `pgvector` semantic search interface for retrieving skill-related document chunks.
+- **Resource Suggestion Service** (`IResourceSuggestionService`) — generates learning resource suggestions for skills with <2 existing resources.
+- **Roadmap Generator Service** (`IRoadmapGeneratorService`) — AI-powered roadmap generation from gap analysis with prerequisite mapping and resource integration.
+- **Semantic Kernel DI** — Kernel + OpenAI chat completion registered in container for AI pipelines.
+
+---
+
+## 📋 Recent Fixes & Improvements
+
+Latest branch `fix-not-implement` includes:
+- **Skill ID Mapping** in `JdParseJob` and `GapAnalysisJob` — now uses hybrid `ISkillMatcherBatchService` instead of simple name comparison
+- **Security** — refresh token logout now verifies token ownership (prevents cross-user revocation)
+- **Data Quality** — soft-deleted JDs filtered in career track queries, gap analysis returns 404 when not found
+- **RAG Integration** — `AssessmentGenerateJob` retrieves skill context via `IRagService` (ready for full RAG pipeline)
+- **Validation** — LLM response validators prevent silent data corruption from incomplete AI outputs
+- **URL Safety** — generated resource URLs verified before saving
+
 ---
 
 ## 🧱 Architecture Notes
@@ -231,9 +263,30 @@ Open `/hangfire` in parallel to watch each pipeline finish.
 
 ---
 
-## 🛣️ Roadmap
+## 🛣️ Implementation Status & Roadmap
 
-- **S3.2 Subscription & Payment** (FR8) — Tier management, VNPay integration, Quota logic.
-- **S3.3 Admin Module** (FR9) — Skills taxonomy management, RAG docs ingestion, Resource review queue.
+### ✅ Completed
+- **S1** — Auth, Onboarding, JD Submission, Assessment Path, CV/Assessment submission
+- **S2** — Gap Analysis, Roadmap, Career Tracks, Learning Resources
+- **S3.1** — Portfolio management
+- **S3.2** — Subscription tiers, SePay payment integration, webhook processing, background job TTL cleanup
+- **S3.3** — Infrastructure services: skill matching, RAG retrieval, LLM validators, URL verification, resource suggestions, roadmap generation
 
-When the real LLM/RAG pipelines come online, the only changes are DI rebinds in `Edu-Nexus.Infrastructure/DependencyInjection.cs` plus environment configuration.
+### 🚧 Next Steps
+- **Real AI Pipeline Implementation**: Replace fake parsers with full Semantic Kernel + RAG pipeline:
+  - `OpenAiJdParser` with RAG context for JD parsing
+  - `OpenAiCvParser` with CV similarity matching
+  - `OpenAiAssessmentQuestionGenerator` with RAG-retrieved learning resources
+  - `RoadmapGeneratorService` full implementation with prerequisite graph
+  
+- **Admin Review & Moderation**:
+  - Admin dashboard for reviewing AI-generated resources
+  - URL verification for suggested resources
+  - Skills taxonomy management UI
+  
+- **Performance & Scale**:
+  - Redis caching for RAG queries and skill matching results
+  - Batch embedding processing for document ingestion
+  - Assessment session pooling/memoization
+
+When the real LLM/RAG pipelines come online, the only changes are DI rebinds in `Edu-Nexus.Infrastructure/DependencyInjection.cs` plus environment configuration (model IDs, Semantic Kernel settings). All business logic remains unchanged.
