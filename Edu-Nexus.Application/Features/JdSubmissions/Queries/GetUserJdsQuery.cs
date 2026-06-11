@@ -1,7 +1,6 @@
 using Edu_Nexus.Application.DTOs;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Security;
-using Edu_Nexus.Domain.Entities;
 using Edu_Nexus.Domain.Enums.JdSubmissions;
 using Edu_Nexus.Domain.Enums.Roadmaps;
 using MediatR;
@@ -39,23 +38,49 @@ public class GetUserJdsQueryHandler : IRequestHandler<GetUserJdsQuery, PagedResu
             _ => throw new Exception("422 INVALID_STATUS_FILTER")
         };
 
-        var includes = $"{nameof(JdSubmission.AssessmentPath)},{nameof(JdSubmission.GapAnalysis)},{nameof(JdSubmission.Roadmap)}";
-
+        // KHÔNG Include GapAnalysis/Roadmap: chúng là quan hệ 1-N (gap có nhiều version,
+        // 1 JD có nhiều roadmap active/archived/failed). Include reference đơn lên quan hệ 1-N
+        // khiến EF fan-out — JD bị lặp trong list và cờ has* trỏ vào 1 bản tuỳ ý. Lấy JD "trần"
+        // (không Include) để pagination/đếm chính xác, rồi tính cờ bằng existence query theo trang.
         var all = (await _unitOfWork.JdSubmissions.FindAsync(
             j => j.UserId == userId
                 && j.DeletedAt == null
                 && (statusFilter == null || j.ParseStatus == statusFilter),
-            includeProperties: includes,
-            cancellationToken: cancellationToken))
+            "",
+            cancellationToken))
             .OrderByDescending(j => j.CreatedAt)
             .ToList();
 
         var totalItems = all.Count;
         var totalPages = totalItems == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)pageSize);
 
-        var items = all
+        var pageEntities = all
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .ToList();
+
+        var pageIds = pageEntities.Select(j => j.Id).ToList();
+
+        var pathJdIds = new HashSet<Guid>();
+        var gapJdIds = new HashSet<Guid>();
+        var activeRoadmapJdIds = new HashSet<Guid>();
+
+        if (pageIds.Count > 0)
+        {
+            pathJdIds = (await _unitOfWork.AssessmentPaths.FindAsync(
+                p => pageIds.Contains(p.JdId), "", cancellationToken))
+                .Select(p => p.JdId).ToHashSet();
+
+            gapJdIds = (await _unitOfWork.GapAnalyses.FindAsync(
+                g => pageIds.Contains(g.JdId), "", cancellationToken))
+                .Select(g => g.JdId).ToHashSet();
+
+            activeRoadmapJdIds = (await _unitOfWork.Roadmaps.FindAsync(
+                r => pageIds.Contains(r.JdId) && r.Status == RoadmapStatus.Active, "", cancellationToken))
+                .Select(r => r.JdId).ToHashSet();
+        }
+
+        var items = pageEntities
             .Select(j => new JdSubmissionListItemDto(
                 j.Id,
                 j.SourceType.ToString().ToLowerInvariant(),
@@ -64,9 +89,9 @@ public class GetUserJdsQueryHandler : IRequestHandler<GetUserJdsQuery, PagedResu
                 j.SeniorityLevel,
                 j.ParseStatus.ToString().ToLowerInvariant(),
                 j.CreatedAt,
-                HasAssessmentPath: j.AssessmentPath != null,
-                HasGapAnalysis: j.GapAnalysis != null,
-                HasActiveRoadmap: j.Roadmap != null && j.Roadmap.Status == RoadmapStatus.Active))
+                HasAssessmentPath: pathJdIds.Contains(j.Id),
+                HasGapAnalysis: gapJdIds.Contains(j.Id),
+                HasActiveRoadmap: activeRoadmapJdIds.Contains(j.Id)))
             .ToList();
 
         return new PagedResult<JdSubmissionListItemDto>(

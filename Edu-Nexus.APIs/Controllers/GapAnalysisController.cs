@@ -91,5 +91,17 @@ public class GapAnalysisController : ControllerBase
         {
             return NotFound(new { error = new { code = "GAP_NOT_FOUND", message = "Chưa có gap analysis cho JD này" } });
         }
+        catch (Exception ex) when (ex.Message == "403 FULL_HISTORY_REQUIRES_UPGRADE")
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                error = new
+                {
+                    code = "FULL_HISTORY_REQUIRES_UPGRADE",
+                    message = "Cần nâng cấp gói Student để xem lịch sử Gap Analysis.",
+                    upgradeUrl = "/pricing"
+                }
+            });
+        }
     }
 }

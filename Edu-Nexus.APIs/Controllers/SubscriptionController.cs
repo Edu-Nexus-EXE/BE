@@ -46,6 +46,30 @@ public class SubscriptionController : ControllerBase
         }
     }
 
+    /// <summary>GET /subscription/orders — Lịch sử order thanh toán của user (cho order-history UI)</summary>
+    [HttpGet("orders")]
+    [Authorize]
+    public async Task<IActionResult> GetMyOrders(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? status = null,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var result = await _mediator.Send(new GetMyPaymentOrdersQuery(page, pageSize, status), ct);
+            return Ok(new { data = result.Data, pagination = result.Pagination });
+        }
+        catch (Exception ex) when (ex.Message.StartsWith("401"))
+        {
+            return Unauthorized(new { error = new { code = "UNAUTHORIZED" } });
+        }
+        catch (Exception ex) when (ex.Message == "422 INVALID_STATUS_FILTER")
+        {
+            return UnprocessableEntity(new { error = new { code = "INVALID_STATUS_FILTER", message = "status phải là pending|completed|failed|cancelled" } });
+        }
+    }
+
     /// <summary>POST /subscription/orders — Tạo order thanh toán SePay + trả VietQR (FR8.4)</summary>
     [HttpPost("orders")]
     [Authorize]

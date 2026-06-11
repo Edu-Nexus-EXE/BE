@@ -20,6 +20,9 @@ services:
       Logging__LogLevel__Default: "Information"
       Logging__LogLevel__Microsoft.AspNetCore: "Warning"
       AllowedHosts: "*"
+      # Domain public để dựng URL portfolio chia sẻ (FR6.2). PHẢI set đúng domain thật,
+      # nếu không link portfolio sẽ trỏ về default sai (https://edunexus.vn).
+      App__PublicBaseUrl: ${APP_PUBLIC_BASE_URL:-https://edunexus.vn}
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};"
       ConnectionStrings__Redis: "redis:6379"
       Jwt__Key: ${JWT_KEY}
@@ -29,6 +32,9 @@ services:
       Jwt__RefreshTokenDurationDays: ${JWT_REFRESH_DAYS:-30}
       Google__ClientId: ${GOOGLE_CLIENT_ID}
       Ai__Enabled: ${AI_ENABLED:-false}
+      # Override AI theo từng pipeline (tuỳ chọn). Bỏ trống = dùng theo Ai__Enabled.
+      # Bật/tắt riêng lẻ khi cần, vd chỉ tắt Roadmap: Ai__Pipelines__Roadmap=false
+      # Ai__Pipelines__JdParse / CvParse / AssessmentGen / GapAnalysis / Roadmap / ResourceSuggest
       OpenAI__ApiKey: ${OPENAI_API_KEY:-}
       OpenAI__Embedding: "text-embedding-3-small"
       OpenAI__Models__Fast: "gpt-4o-mini"
@@ -43,6 +49,26 @@ services:
       Rag__ChunkOverlap: 100
       Rag__MinSimilarityScore: 0.65
       Rag__TopK: 5
+      # Mảng truyền qua env bằng index __0/__1/__2 (set tường minh cho khớp appsettings).
+      Rag__AllowedSourceTypes__0: "fptu_curriculum"
+      Rag__AllowedSourceTypes__1: "fptu_syllabus"
+      Rag__AllowedSourceTypes__2: "external_doc"
+      # ---------- Swagger (FR: bật/tắt qua env trên prod, không sửa code) ----------
+      # Đặt true để mở Swagger UI ở "/" trên production. Mặc định false (an toàn).
+      Swagger__Enabled: ${SWAGGER_ENABLED:-false}
+      # ---------- SePay (thanh toán) ----------
+      # BẮT BUỘC cho payment: webhook xác thực bằng SePay__ApiKey; tạo VietQR dùng 3 field bank.
+      SePay__ApiKey: ${SEPAY_API_KEY}
+      SePay__BankAccount: ${SEPAY_BANK_ACCOUNT}
+      SePay__BankCode: ${SEPAY_BANK_CODE}
+      SePay__AccountName: ${SEPAY_ACCOUNT_NAME}
+      # Thời hạn (phút) order pending trước khi job tự huỷ. Mặc định 30.
+      SePay__OrderTtlMinutes: ${SEPAY_ORDER_TTL_MIN:-30}
+      # ---------- Seed admin (DataSeeder tạo admin lúc startup) ----------
+      # Bỏ trống SEED_ADMIN_EMAIL -> KHÔNG seed admin (an toàn). Điền để tạo admin lần đầu.
+      Seed__Admin__Email: ${SEED_ADMIN_EMAIL:-}
+      Seed__Admin__Password: ${SEED_ADMIN_PASSWORD:-}
+      Seed__Admin__FullName: ${SEED_ADMIN_FULLNAME:-Edu-Nexus Admin}
     volumes:
       - api-uploads:/app/wwwroot/uploads
     healthcheck:

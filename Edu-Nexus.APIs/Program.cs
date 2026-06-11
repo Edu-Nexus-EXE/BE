@@ -27,7 +27,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Swagger bật khi: môi trường Development, HOẶC bật cờ Swagger:Enabled=true qua env/config.
+// → Trên production có thể mở Swagger bằng cách set env `Swagger__Enabled=true` (KHÔNG cần sửa code,
+//   KHÔNG cần đổi ASPNETCORE_ENVIRONMENT — tránh side-effect của việc lật cả môi trường).
+var enableSwagger = app.Environment.IsDevelopment()
+    || app.Configuration.GetValue<bool>("Swagger:Enabled");
+if (enableSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>

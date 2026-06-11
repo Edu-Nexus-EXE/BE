@@ -60,6 +60,20 @@ public record CreateOrderResponse(
     string Status
 );
 
+// ─── My Orders (lịch sử thanh toán của user) ──────────────
+public record MyPaymentOrderItemDto(
+    Guid OrderId,
+    string TierCode,
+    decimal Amount,
+    string Currency,
+    string PaymentProvider,
+    string? ProviderOrderId,
+    string Status,
+    short DurationMonths,
+    DateTime CreatedAt,
+    DateTime? CompletedAt
+);
+
 // ─── SePay Webhook ────────────────────────────────────────
 public record SepayWebhookPayload(
     long Id,

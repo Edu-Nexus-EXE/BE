@@ -1,5 +1,6 @@
 using Edu_Nexus.Application.DTOs;
 using Edu_Nexus.Application.Features.Admin.SubscriptionTiers.Commands;
+using Edu_Nexus.Application.Features.Admin.SubscriptionTiers.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +17,13 @@ public class AdminSubscriptionTiersController : ControllerBase
     public AdminSubscriptionTiersController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> List()
+    {
+        var result = await _mediator.Send(new GetAdminSubscriptionTiersQuery());
+        return Ok(new { data = result });
     }
 
     [HttpPut("{tierCode}")]

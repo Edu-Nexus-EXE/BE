@@ -54,7 +54,7 @@ public class RegenerateRoadmapCommandHandler : IRequestHandler<RegenerateRoadmap
             UserId = userId,
             JdId = oldRoadmap.JdId,
             Status = RoadmapStatus.Generating,
-            Title = null,
+            Title = oldRoadmap.Title,
             ProgressPercent = 0,
             IsOutdated = false
         };
