@@ -1,0 +1,8 @@
+npm error code ENOENT
+npm error syscall open
+npm error path D:\FPT\semester-8\EXE\CODE\BE\package.json
+npm error errno -4058
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open 'D:\FPT\semester-8\EXE\CODE\BE\package.json'
+npm error enoent This is related to npm not being able to find a file.
+npm error enoent
+npm error A complete log of this run can be found in: C:\Users\Asus\AppData\Local\npm-cache\_logs\2026-06-11T05_13_39_094Z-debug-0.log

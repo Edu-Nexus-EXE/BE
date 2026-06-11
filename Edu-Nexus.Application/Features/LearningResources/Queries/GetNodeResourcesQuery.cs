@@ -1,7 +1,6 @@
 using Edu_Nexus.Application.Features.LearningResources.DTOs;
 using Edu_Nexus.Application.Interfaces.Data;
 using Edu_Nexus.Application.Interfaces.Security;
-using Edu_Nexus.Domain.Enums.Roadmaps;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -40,9 +39,9 @@ public class GetNodeResourcesQueryHandler : IRequestHandler<GetNodeResourcesQuer
         if (node.Roadmap.UserId != userId)
             throw new Exception("404 NOT_FOUND");
 
-        // 3. Check roadmap is not archived
-        if (node.Roadmap.Status == RoadmapStatus.Archived)
-            throw new Exception("403 ROADMAP_ARCHIVED");
+        // 3. Archived roadmap vẫn cho XEM resource (read-only) — user thường xem lại lộ trình cũ
+        //    sau khi regenerate (mỗi lần regenerate archive roadmap cũ). Trả 403 ở đây làm FE
+        //    hiển thị lỗi nhiễu. Chỉ chặn ghi/tương tác ở chỗ khác, không chặn đọc resource.
 
         // 4. If no skill linked to this node, return empty
         if (node.SkillId == null)

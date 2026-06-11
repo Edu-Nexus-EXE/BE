@@ -66,16 +66,25 @@ public class GenerateRoadmapCommandHandler : IRequestHandler<GenerateRoadmapComm
             }
         }
 
-        // 3. Nếu đã có active roadmap cùng JD → archive cũ
+        // 3. Nếu đã có active roadmap cùng JD → archive cũ.
+        //    PHẢI persist archive TRƯỚC khi insert roadmap 'generating' mới, nếu không sẽ vi phạm
+        //    unique index idx_roadmaps_jd_active (jd_id WHERE status IN ('active','generating'))
+        //    do EF không đảm bảo UPDATE chạy trước INSERT trong cùng 1 SaveChanges → 500.
         var existingRoadmaps = await _unitOfWork.Roadmaps.FindAsync(
             r => r.UserId == userId && r.JdId == request.JdId && r.Status == RoadmapStatus.Active,
             "", cancellationToken);
 
+        var archivedAny = false;
         foreach (var existing in existingRoadmaps)
         {
             existing.Status = RoadmapStatus.Archived;
             existing.IsOutdated = false;
             _unitOfWork.Roadmaps.Update(existing);
+            archivedAny = true;
+        }
+        if (archivedAny)
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         // 4. INSERT roadmaps với status = 'generating'
